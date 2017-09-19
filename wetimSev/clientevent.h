@@ -29,6 +29,7 @@ private:
     int doSevByMesgType (ImmessageData &imsgData, ll_list_t *out);
 
     int replyCmdApplyNum (ImmessageData &imsgData, ll_list_t *out);
+    int replyCmdLogonAuth (ImmessageData &imsgData, ll_list_t *out);
 };
 
 class ClientTcpAccept : public acceptSockHandle_c, public SingletonTempBase<ClientTcpAccept>

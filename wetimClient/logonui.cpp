@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QMessageBox>
+#include <QApplication>
 #include "include_h/sys_defs.h"
 #include "logonui.h"
 #include "climesgobsev.h"
@@ -42,7 +43,9 @@ LogonUi::LogonUi():
 
     imChannelPtr = ImmesageChannel::getInstance();
     imChannelPtr->regOneImobsever(new ImesgApplyNumObsev, this);
-    connect(imChannelPtr, SIGNAL(sockerror(int, const QString&)), this, SLOT(dispErrorInfo(int, const QString&)));
+    imChannelPtr->regOneImobsever(new ImesgLononObsev, this);
+    connect(imChannelPtr, SIGNAL(sockerror(int, const QString&)), this, SLOT(dispNetworkErrorInfo(int, const QString&)));
+    connect(this, SIGNAL(logonAuthStateSig(int)), this, SLOT(logonAuthStateSlot(int)));
 }
 
 LogonUi::~LogonUi()
@@ -51,9 +54,10 @@ LogonUi::~LogonUi()
     imChannelPtr->close();
 }
 
-void LogonUi::dispErrorInfo(int errn, const QString &errstr)
+void LogonUi::dispNetworkErrorInfo(int errn, const QString &errstr)
 {
     QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("%1, 错误码 %2").arg(errstr).arg(errn), QMessageBox::Ok);
+    logOnBtnPtr->setDisabled(0);
 }
 
 void LogonUi::setApplyNumInfo(const char *name, const char *pass, int uid, int avicon)
@@ -67,6 +71,21 @@ void LogonUi::setApplyNumInfo(const char *name, const char *pass, int uid, int a
     dbptr->setUsrBaseInfo(uid, name, pass, avicon);
 
     reflashUsrDropDownlist();
+}
+
+void LogonUi::logonAuthStateSlot(int succ)
+{
+    logOnBtnPtr->setDisabled(0);
+    if (!succ){
+        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("登录认证失败"),QMessageBox::Ok);
+    }else{
+        accept();
+    }
+}
+
+void LogonUi::setLogonAuthState(int succd)
+{
+    emit logonAuthStateSig(succd);
 }
 
 void LogonUi::setDisplayLogLayout()
@@ -89,7 +108,7 @@ void LogonUi::setLogonInfoLayout()
     hlayoutPtr->addWidget(l);
 
     QGridLayout *layoutGridLogonPtr = new QGridLayout;
-    layoutGridLogonPtr->addWidget(new QLabel(QStringLiteral("账 号")),0, 0);
+    layoutGridLogonPtr->addWidget(labUserIdPtr= new QLabel(QStringLiteral("账 号")),0, 0);
     lineUserName.setEditable(1);
     reflashUsrDropDownlist();
 
@@ -98,7 +117,7 @@ void LogonUi::setLogonInfoLayout()
     applyNumBtnPtr = new QPushButton(QStringLiteral("申请号码"));
     connect(applyNumBtnPtr, SIGNAL(clicked(bool)), this, SLOT(applyNumFromServer()));
     layoutGridLogonPtr->addWidget(applyNumBtnPtr,0,2);
-    layoutGridLogonPtr->addWidget(new QLabel(QStringLiteral("密  码")),1, 0);
+    layoutGridLogonPtr->addWidget(labUserPasswdPtr = new QLabel(QStringLiteral("密  码")),1, 0);
     layoutGridLogonPtr->addWidget(&linePasswd,1, 1);
     logOnBtnPtr = new QPushButton(QStringLiteral("登 录"));
     connect(logOnBtnPtr, SIGNAL(clicked(bool)), this, SLOT(sendLogonMessage()));
@@ -222,7 +241,7 @@ void LogonUi::applyNumFromServer()
         //imChannelPtr->sendTcpData2Server(oldSevAddr, tport, m);
         imChannelPtr->pushTcpDataOut(m, oldSevAddr, tport);
     }else{
-        dispErrorInfo(0, QStringLiteral("查询登陆服务器信息失败"));
+        dispNetworkErrorInfo(0, QStringLiteral("查询登陆服务器信息失败"));
     }
 
 }
@@ -241,7 +260,21 @@ void LogonUi::reflashUsrDropDownlist()
 
 void LogonUi::sendLogonMessage()
 {
-    logOnBtnPtr->setDisabled(1);
+    ImmessageData m(IMMESG_USER_LOGON);
+    ImessageLogon logon(&m);
+    int tport;
+
+
+    if (dbptr->queryLogonSevAddr(oldSevAddr, sizeof(oldSevAddr)) &&
+            (tport = dbptr->queryLogonSevTcport()) > 0){
+        logon.setDstSrcUsr(0, lineUserName.currentText().toInt());
+        logon.setLogonPassword(linePasswd.text().toStdString().c_str());
+        imChannelPtr->pushTcpDataOut(m, oldSevAddr,tport);
+        logOnBtnPtr->setDisabled(1);
+    }else{
+        dispNetworkErrorInfo(0, QStringLiteral("查询登陆服务器信息失败"));
+    }
+
 }
 
 

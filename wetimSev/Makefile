@@ -2,7 +2,7 @@
 #CC=mipsel-linux-g++
 CC=g++
 AR=ar
-TARGET=imChatServer
+TARGET=imChatServer.exe
 SQLITE3OBJ=libsqlite3.a
 SRC_BASE_DIR=..
 BUILD_DIR=/tmp/build
@@ -21,7 +21,7 @@ LIBS=-pthread -ldl
 
 #####用户自定义变量区######
 
-SRC_DIRS=$(shell find $(SRC_BASE_DIR) ! -path "*wetimClient" -type d)
+SRC_DIRS=$(shell find $(SRC_BASE_DIR) ! -path "*wetimClient" ! -path "*.git*"  ! -path "*build-*" -type d)
 OBJ_DIRS=$(SRC_DIRS:$(SRC_BASE_DIR)%=$(BUILD_DIR)%)
 ALL_FILES= $(shell find $(SRC_BASE_DIR) ! -path "*wetimClient*" -print)
 SRC_FILES= $(filter %.$(FILEXXX), $(ALL_FILES))

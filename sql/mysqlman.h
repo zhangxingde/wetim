@@ -14,7 +14,7 @@ public:
     ~MysqlMan();
 	bool setConnect (const char *usr, const char *passwd, const char *addr, int port , const char *dbname);
     bool runQuery (const std::string &cmd);
-    bool runQuery(const SqlQueryDataRows &formatData);
+    bool runQuery(const SqlQueryDataRows &rows, const std::string &where = std::string());
     bool runQuery(const std::string &cmd, SqlQueryDataRows &formatData);
 
 private:

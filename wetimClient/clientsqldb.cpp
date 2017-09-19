@@ -3,7 +3,7 @@
 #include <QDir>
 #include <QDebug>
 
-ClientSqlDb::ClientSqlDb():logonDb((QDir::homePath()+"/"+SYSCFGROOT+"wetim.db").toStdString().c_str())
+ClientSqlDb::ClientSqlDb():logonDb((QDir::homePath()+"/"+SYSCFGROOT+"/wetim.db").toStdString().c_str())
 {
     char sqlcmd[2048];
 
@@ -113,4 +113,28 @@ bool ClientSqlDb::queryAllUsrId(SqlQueryDataRows &row)
 {
     std::string cmd = "select " + std::string(FIELD_USRBASE_ID) + std::string(" from ") + std::string(TABLE_NAME_BASEINFO);
     return logonDb.runQuery(cmd, row) && row.size();
+}
+
+bool ClientSqlDb::queryUsrPasswdByUsrID(int uid, char *pass, size_t len)
+{
+    SqlQueryDataRows row;
+    char where[128];
+
+    snprintf(where, sizeof(where), FIELD_USRBASE_ID" = %d", uid);
+
+    if (queryUsrBaseInfo(row, where) && row.size() > 0){
+        strncpy(pass, row[0][2].getString(), len);
+        return 1;
+    }
+    return 0;
+}
+
+bool ClientSqlDb::queryUsrBaseInfo(SqlQueryDataRows &row, const std::string &where)
+{
+    std::string cmd = "select "+ std::string(FIELD_USRBASE_ID) + std::string(" from ") + std::string(TABLE_NAME_BASEINFO);
+
+    if (!where.empty()){
+        cmd += std::string(" where ") + where;
+    }
+    return logonDb.runQuery(cmd, row);
 }

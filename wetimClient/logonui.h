@@ -18,12 +18,16 @@ public:
     LogonUi();
     ~LogonUi();
     void setApplyNumInfo (const char *name, const char *pass, int uid, int avicon);
+    void setLogonAuthState (int succd);
 private slots:
     void dispSeting ();
     void getLogonSevSeting ();
     void applyNumFromServer ();
-    void dispErrorInfo (int errn, const QString &errstr);
+    void dispNetworkErrorInfo (int errn, const QString &errstr);
     void sendLogonMessage ();
+    void logonAuthStateSlot (int succ);
+signals:
+    void logonAuthStateSig (int succ);
 private:
     const int hight, width;
     QVBoxLayout *topHalfPtr,*downHalfPtr;
@@ -33,7 +37,9 @@ private:
     class QPushButton *setingBtnPtr;
     QVBoxLayout *mainLayoutPtr;
     QComboBox lineUserName;
+    QLabel *labUserIdPtr;
     QLineEdit linePasswd;
+    QLabel *labUserPasswdPtr;
     class QPushButton *applyNumBtnPtr;
     class QPushButton *logOnBtnPtr;
 

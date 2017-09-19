@@ -80,6 +80,16 @@ void ClientTcpImmesgEvent::close()
     p->pushInOneClientTcpEventPtr(this);
     SingletonTempBase<ClientTcpAccept>::close();
     sockHandle_c::close();
+    if (!LLIST_EMPTY(&inDataQueue)){
+        ll_list_t * l= inDataQueue.next;
+        LLIST_DEL(&inDataQueue);
+        mempollPtr->freeMemList(l);
+    }
+    if (!LLIST_EMPTY(&outDataQueue)){
+        ll_list_t * l= outDataQueue.next;
+        LLIST_DEL(&outDataQueue);
+        mempollPtr->freeMemList(l);
+    }
 }
 
 int ClientTcpImmesgEvent::doSelfWorkByRecvData(ll_list_t *head)
@@ -93,6 +103,7 @@ int ClientTcpImmesgEvent::doSelfWorkByRecvData(ll_list_t *head)
         b = MEMBER_ENTRY(inDataQueue.next, memBbuff_t, list);
         m = (Immessage_t*)b->s;
         if (shouldRcvLen == 0){//begin
+            rcvMesgLen = 0;
             if (ntohl(m->checkNum1) == IMMESG_CHCK1){
                 if (ntohl(m->mesgLen) > IMMESG_MESGDATA_MAXLEN){
                     isDel = 1;
@@ -115,8 +126,10 @@ int ClientTcpImmesgEvent::doSelfWorkByRecvData(ll_list_t *head)
         }else{
             LLIST_DEL(&b->list);
             mempollPtr->freeMembuf(b);
+            retnum = -1;
         }
     }
+    STD_DEBUG("recv ret = %d", retnum);
     return retnum;
 }
 
@@ -152,11 +165,12 @@ int ClientTcpImmesgEvent::doSelfWorkBySendData(ll_list_t *head)
         }
 
     }
+
     if (!retnum || !messageData.isValid()){
-        return !LLIST_EMPTY(&outDataQueue);
+        return -1;
     }
     retnum = doSevByMesgType(messageData, head);
-    STD_DEBUG("do work ,retnum = %d", retnum);
+    STD_DEBUG("out ret = %d",retnum);
     return retnum;
 }
 
@@ -165,10 +179,11 @@ int ClientTcpImmesgEvent::doSevByMesgType(ImmessageData &imsgData, ll_list_t *ou
     switch (imsgData.getMesgType()){
         case IMMESG_APPLYNUM:
             return replyCmdApplyNum(imsgData, out);
-        default:
-            return 0;
+        case IMMESG_USER_LOGON:
+            return replyCmdLogonAuth(imsgData, out);
+
     }
-    return 0;
+    return -1;
 }
 
 int ClientTcpImmesgEvent::replyCmdApplyNum(ImmessageData &imsgData, ll_list_t *out)
@@ -183,13 +198,35 @@ int ClientTcpImmesgEvent::replyCmdApplyNum(ImmessageData &imsgData, ll_list_t *o
     if (!mdbptr->getUsrNameByUsrID(userinfo.uid, userinfo.name, sizeof(userinfo.name)) ||
             !mdbptr->getUsrPasswdByUsrID(userinfo.uid, userinfo.passwd, sizeof(userinfo.passwd)) ||
             (userinfo.avicon = mdbptr->getAvaiconIdByUsrID(userinfo.uid)) < 0){
-        return 0;
+        return -1;
     }
     userinfo.uid = htonl(userinfo.uid);
     userinfo.avicon = htonl(userinfo.avicon);
     apply.setDstSrcUsr(userinfo.uid, 0);
-    apply.addMesgData(&userinfo, sizeof(userinfo));
+    apply.addMesgData(sizeof(userinfo),&userinfo);
     ll_list_t *l = mempollPtr->fflushData2QueueLList(apply.getDataPtr(), apply.length());
+    if (l){
+        LLIST_ADD_TAIL(out, l);
+        return 1;
+    }
+    return 0;
+}
+
+int ClientTcpImmesgEvent::replyCmdLogonAuth(ImmessageData &imsgData, ll_list_t *out)
+{
+    ImessageLogon logon(&imsgData);
+    ImmessageData m(IMMESG_USER_LOGON);
+    ImessageLogon re(&m);
+    char passwd[32];
+
+    if (mdbptr->getUsrPasswdByUsrID(logon.getSrcUsrId(), passwd, sizeof(passwd)) &&
+            !strcmp(passwd, logon.getPassword())){
+        re.setAuthSucc(1);
+    }else{
+        re.setAuthSucc(0);
+    }
+    re.setDstSrcUsr(logon.getSrcUsrId(), 0);
+    ll_list_t *l = mempollPtr->fflushData2QueueLList(re.getDataPtr(), re.length());
     if (l){
         LLIST_ADD_TAIL(out, l);
         return 1;

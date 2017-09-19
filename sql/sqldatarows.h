@@ -45,8 +45,7 @@ class SqlQueryDataRows {
 		typedef struct _sqlFiledDesc{
 			int len;
 			unsigned char type;
-			char havedOrgStr;
-			int orgStrOffset;
+                        int orgStrOffset;
 			const char *name;
 			sqlDataValue_t v;
 			char ss[1];
@@ -84,24 +83,25 @@ class SqlQueryDataRows {
 				memcpy(v.s, p, l);
 				type = SQLDATA_TYPE_BLOB;
 				len = l;
+                                setOrgString(len, 0);
 			}
 			void setValue (const char *s, const char *orgstr){
 				strcpy(v.s,s);
 				type = SQLDATA_TYPE_STRING;
 				len = strlen (s);
-				setOrgString(len + 1, orgstr);
+                                setOrgString(len, orgstr);
 			}
 			void setValue() {
 				type = SQLDATA_TYPE_NULL;
 				len = 0;
 				v.u64 = 0;
+                                setOrgString(len, 0);
 			}
 			void setOrgString (int offset, const char *s){
-				if (s){
-					orgStrOffset = offset;
-					strcpy(v.s + orgStrOffset, s);
-					havedOrgStr = 1;
-				}
+                                orgStrOffset = offset + 1;
+                                if (s){
+                                    strcpy(v.s + orgStrOffset, s);
+                                }
 			}
 			char getChar () const{return v.ch;}
 			int  getInt () const {return v.i32;} 
@@ -113,7 +113,7 @@ class SqlQueryDataRows {
 				memcpy(p, v.s, len);
 				return len;
 			} 
-			const char* getOrgString () const {return havedOrgStr ? v.s + orgStrOffset : 0;}
+                        const char* getOrgString () const {return v.s + orgStrOffset;}
 
 		}sqlFiledDesc_t;
 
@@ -130,7 +130,7 @@ class SqlQueryDataRows {
 
 		bool addOneField (const char *name, char ch, const char *orgstr = 0);
 		bool addOneField (const char *name, int i, const char *orgstr = 0);
-        bool addOneField (const char *name, long long int li, const char *orgstr = 0);
+		bool addOneField (const char *name, long long li, const char *orgstr = 0);
 		bool addOneField (const char *name, const char *s, const char *orgstr = 0);
 		bool addOneField (const char *name, float f, const char *orgstr = 0);
 		bool addOneField (const char *name, double d, const char *orgstr = 0);

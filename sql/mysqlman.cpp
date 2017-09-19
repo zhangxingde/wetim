@@ -38,6 +38,7 @@ bool MysqlMan::setConnect (const char *usr, const char *passwd, const char *addr
     mysql_query(mysqlPtr,"set character_set_results='utf8'");
 	mysql_query(mysqlPtr, "set character_set_client='utf8'");
 	mysql_query(mysqlPtr, "set character_set_database='utf8'");
+    mysql_query(mysqlPtr, "SET character_set_connection='utf8'");
     return 1;
 }
 
@@ -54,12 +55,12 @@ bool MysqlMan::runQuery(const std::string &cmd)
     }
     return 1;
 }
-bool MysqlMan::runQuery(const SqlQueryDataRows &formatData)
+bool MysqlMan::runQuery(const SqlQueryDataRows &rows, const std::string &where)
 {
     std::string inDataStr("insert into ");
-    unsigned int x = formatData.x(), y = formatData.y();
+    unsigned int x = rows.x(), y = rows.y();
     const unsigned int  maxEachRows = sizeof(maxBind)/sizeof (maxBind[0])/x;
-    bool isUpdate = formatData.isSQlCmd(SqlQueryDataRows::SQLCMD_UPDATE), b = 0;
+    bool isUpdate = rows.isSQlCmd(SqlQueryDataRows::SQLCMD_UPDATE), b = 0;
 
     if (!mysqlPtr){
         //setErrorString("未连接数据库");
@@ -67,13 +68,13 @@ bool MysqlMan::runQuery(const SqlQueryDataRows &formatData)
     }
     if (!x || !y){
         setErrno(0);
-        setErrorString((std::string("在该表项中未输入任何数据:")+std::string(formatData.getTabName())).c_str());
+        setErrorString((std::string("在该表项中未输入任何数据:")+std::string(rows.getTabName())).c_str());
         return 0;
     }
-    inDataStr += formatData.getTabName();
+    inDataStr += rows.getTabName();
     inDataStr.append("(");
     for (unsigned int i = 0; i < x; ++i){
-        inDataStr.append(formatData.getFiledName(i));
+        inDataStr.append(rows.getFiledName(i));
         inDataStr.push_back(',');
     }
     inDataStr.erase(inDataStr.length() -1);
@@ -97,15 +98,15 @@ bool MysqlMan::runQuery(const SqlQueryDataRows &formatData)
         if (isUpdate){
             inDataStr.append(" ON DUPLICATE KEY UPDATE ");
             for (unsigned int i = 0; i < x; ++i){
-                  inDataStr.append(formatData.getFiledName(i));
+                  inDataStr.append(rows.getFiledName(i));
                   inDataStr.append("=values(");
-                  inDataStr.append(formatData.getFiledName(i));
+                  inDataStr.append(rows.getFiledName(i));
                   inDataStr.append("),");
             }
             inDataStr.erase(inDataStr.length() -1);
         }
         y -= r;
-    }while ((b = runStmtQuery(inDataStr, formatData,n++*maxEachRows, r)) && y/maxEachRows);
+    }while ((b = runStmtQuery(inDataStr, rows,n++*maxEachRows, r)) && y/maxEachRows);
     return b;
 }
 

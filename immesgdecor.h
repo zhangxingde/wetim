@@ -37,7 +37,22 @@ private:
 class ImessageLogon : public ImmessageMan
 {
 public:
+    #pragma pack(1)
+    typedef struct {
+        char passwd[16];
+        int succ;
+    }LogonUsr_t;
+    #pragma pack()
+    ImessageLogon (ImmessageMan *m);
+    void setLogonPassword (const char *pass);
+    const char* getPassword() {return logonUsrPtr->passwd;}
+    void setAuthSucc (int b);
+    int isAuthSucced();
 
+private:
+    LogonUsr_t *logonUsrPtr;
+    bool isPushed;
+    void pushMemLength ();
 };
 
 ////////////////////////////////////////////////////

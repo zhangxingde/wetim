@@ -51,7 +51,9 @@ public:
     ImmessageMan (ImmessageMan *origImmesgPtr);
     virtual ~ImmessageMan() {}
     virtual void setDstSrcUsr (int dst, int src);
-    virtual unsigned int  addMesgData (const void *p, unsigned int len);
+    virtual int getDstUsrId () const;
+    virtual int getSrcUsrId () const;
+    virtual unsigned int  addMesgData (unsigned int len, const void *p = 0);
     virtual const void* getDataPtr () const;
     virtual unsigned int length() const;
     virtual unsigned int mesgLength() const;
@@ -67,11 +69,13 @@ public:
     ImmessageData(Imesgtpe_t t);
     ImmessageData ();
     void setDstSrcUsr(int dst, int src);
-    unsigned int addMesgData(const void *p, unsigned int len);
+    int getDstUsrId () const;
+    int getSrcUsrId () const;
+    unsigned int addMesgData(unsigned int len, const void *p = 0);
     const void* getDataPtr() const {return mesg.megBuf;}
     unsigned int length() const {return mLength;}
-    virtual unsigned int mesgLength() const;
-    virtual const char* getMesgDataPtr() const;
+    unsigned int mesgLength() const;
+    const char* getMesgDataPtr() const;
 
     unsigned int recvRawData(const void *p, unsigned int len);
     bool isValid () const;

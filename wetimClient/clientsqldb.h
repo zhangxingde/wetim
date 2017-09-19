@@ -30,10 +30,13 @@ public:
 
     bool setUsrBaseInfo (int id, const char *name, const char *pass, int avicon);
     bool queryAllUsrId (SqlQueryDataRows &row);
+    bool queryUsrPasswdByUsrID (int uid, char *pass, size_t len);
 private:
     ClientSqlDb();
     ~ClientSqlDb();
     Sqlite3Man logonDb;
+
+    bool queryUsrBaseInfo (SqlQueryDataRows &row, const std::string &where = std::string());
 };
 
 #endif // ClientSqlDb_H

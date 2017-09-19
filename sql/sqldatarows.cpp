@@ -1,4 +1,4 @@
-﻿#include "sqldatarows.h"
+#include "sqldatarows.h"
 
 SqlQueryDataRows::SqlQueryDataRows()
 {
@@ -84,7 +84,7 @@ bool SqlQueryDataRows::addOneField (const char *name, int i, const char *orgstr)
 	addColNameIn(name);
 	return 1;
 }
-bool SqlQueryDataRows::addOneField (const char *name, long long int li, const char *orgstr)
+bool SqlQueryDataRows::addOneField (const char *name, long long li, const char *orgstr)
 {
 	bool canorgstr = canRecvOrgStr && orgstr; 
 	sqlFiledDesc_t *sqlDescPtr = getNewSpaceForFiledByLen(sizeof (li) + (canorgstr?strlen(orgstr): 0));

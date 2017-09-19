@@ -14,6 +14,42 @@ int ImessageApplyNum::applyUserNumFromSev()
 }
 #endif
 
+ImessageLogon::ImessageLogon(ImmessageMan *m):ImmessageMan(m)
+{
+    logonUsrPtr = (LogonUsr_t*)getMesgDataPtr();
+    isPushed = 0;
+    //logonUsrPtr->passwd[0] = 0;
+    //logonUsrPtr->succ = 0;
+}
+
+void ImessageLogon::setLogonPassword(const char *pass)
+{
+    if (pass){
+        pushMemLength();
+        strncpy(logonUsrPtr->passwd, pass, sizeof(logonUsrPtr->passwd));
+    }
+}
+
+void ImessageLogon::setAuthSucc(int b)
+{
+    pushMemLength();
+    logonUsrPtr->succ = htonl(b);
+}
+
+int ImessageLogon::isAuthSucced()
+{
+    return ntohl(logonUsrPtr->succ);
+}
+
+void ImessageLogon::pushMemLength()
+{
+    if (!isPushed){
+        isPushed = 1;
+        addMesgData(sizeof(LogonUsr_t));
+    }
+}
+
+
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////

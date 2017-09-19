@@ -13,9 +13,12 @@ void ImmessageMan::setDstSrcUsr(int dst, int src)
     mOrigImmesgPtr->setDstSrcUsr(dst,src);
 }
 
-unsigned int ImmessageMan::addMesgData(const void *p, unsigned int len)
+int ImmessageMan::getDstUsrId() const {return mOrigImmesgPtr->getDstUsrId();}
+int ImmessageMan::getSrcUsrId() const {return mOrigImmesgPtr->getSrcUsrId();}
+
+unsigned int ImmessageMan::addMesgData(unsigned int len, const void *p)
 {
-    return mOrigImmesgPtr->addMesgData(p,len);
+    return mOrigImmesgPtr->addMesgData(len,p);
 }
 
 const void* ImmessageMan::getDataPtr() const
@@ -63,13 +66,17 @@ void ImmessageData::setDstSrcUsr(int dst, int src)
     mesg.head.srcUsr = htonl(src);
 }
 
-unsigned int ImmessageData::addMesgData(const void *p, unsigned int len)
+int ImmessageData::getDstUsrId() const {return ntohl(mesg.head.dstUsr);}
+int ImmessageData::getSrcUsrId() const {return ntohl(mesg.head.srcUsr);}
+
+unsigned int ImmessageData::addMesgData(unsigned int len, const void *p)
 {
     if (mLength + len > sizeof(mesg.megBuf)){
         return 0;
     }
     mLength += len;
-    memcpy(curMesgDataPtr, p, len);
+    if (p)
+        memcpy(curMesgDataPtr, p, len);
     curMesgDataPtr += len;
     mesg.head.mesgLen = htonl(curMesgDataPtr - mesg.head.mesgData);
     *(unsigned int*)(curMesgDataPtr + 1) = htonl(IMMESG_CHCK2);

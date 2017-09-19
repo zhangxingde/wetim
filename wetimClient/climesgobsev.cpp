@@ -14,3 +14,10 @@ void ImesgApplyNumObsev::workIngWithRecvMessage(ImmessageData &im, void *p)
 
     ((LogonUi*)p)->setApplyNumInfo(m.getName(), m.getPasswd(), ntohl(m.getUid()), ntohl(m.getAvicon()));
 }
+
+//////////////////////////
+void ImesgLononObsev::workIngWithRecvMessage(ImmessageData &im, void *p)
+{
+    ImessageLogon m(&im);
+    ((LogonUi*)p)->setLogonAuthState((m.isAuthSucced()));
+}
