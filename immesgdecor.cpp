@@ -2,19 +2,25 @@
 #include "immesgdecor.h"
 #include <string.h>
 
-ImessageApplyNum::ImessageApplyNum(ImmessageMan *imesgDataPtr):ImmessageMan(imesgDataPtr)
+ImmesgDecorApplyNum::ImmesgDecorApplyNum(ImmessageMan *imesgDataPtr):ImmessageMan(imesgDataPtr)
 {
     usrinfoptr = (ApplyUsrInfos_t*)getMesgDataPtr();
 }
 
+ImmesgDecorApplyNum::ImmesgDecorApplyNum(const ImmessageMan *imesgDataPtr):ImmessageMan(imesgDataPtr)
+{
+    usrinfoptr = (ApplyUsrInfos_t*)getMesgDataPtr();
+}
+
+
 #ifdef SYS_SERVER
-int ImessageApplyNum::applyUserNumFromSev()
+int ImmesgDecorApplyNum::applyUserNumFromSev()
 {
     return time(0);
 }
 #endif
 
-ImessageLogon::ImessageLogon(ImmessageMan *m):ImmessageMan(m)
+ImmesgDecorLogon::ImmesgDecorLogon(ImmessageMan *m):ImmessageMan(m)
 {
     logonUsrPtr = (LogonUsr_t*)getMesgDataPtr();
     isPushed = 0;
@@ -22,7 +28,13 @@ ImessageLogon::ImessageLogon(ImmessageMan *m):ImmessageMan(m)
     //logonUsrPtr->succ = 0;
 }
 
-void ImessageLogon::setLogonPassword(const char *pass)
+ImmesgDecorLogon::ImmesgDecorLogon(const ImmessageMan *m):ImmessageMan(m)
+{
+    logonUsrPtr = (LogonUsr_t*)getMesgDataPtr();
+    isPushed = 0;
+}
+
+void ImmesgDecorLogon::setLogonPassword(const char *pass)
 {
     if (pass){
         pushMemLength();
@@ -30,18 +42,18 @@ void ImessageLogon::setLogonPassword(const char *pass)
     }
 }
 
-void ImessageLogon::setAuthSucc(int b)
+void ImmesgDecorLogon::setAuthSucc(int b)
 {
     pushMemLength();
     logonUsrPtr->succ = htonl(b);
 }
 
-int ImessageLogon::isAuthSucced()
+int ImmesgDecorLogon::isAuthSucced()
 {
     return ntohl(logonUsrPtr->succ);
 }
 
-void ImessageLogon::pushMemLength()
+void ImmesgDecorLogon::pushMemLength()
 {
     if (!isPushed){
         isPushed = 1;
@@ -49,6 +61,50 @@ void ImessageLogon::pushMemLength()
     }
 }
 
+
+
+
+ImmesgDecorOnlist::ImmesgDecorOnlist(ImmessageMan *m):ImmessageMan(m)
+{
+    onlistCountPtr = (OnlistCount_t*)getMesgDataPtr();
+    onlistUsrPtr = (OnlistUsr_t*)(onlistCountPtr + 1);
+
+    onlistCountPtr->n = 0;
+    onlistCountPtr->hadMore = 0;
+
+    addMesgData(sizeof(*onlistCountPtr));
+}
+
+ImmesgDecorOnlist::ImmesgDecorOnlist(const ImmessageMan *m):ImmessageMan(m)
+{
+    onlistCountPtr = (OnlistCount_t*)getMesgDataPtr();
+    onlistUsrPtr = (OnlistUsr_t*)(onlistCountPtr + 1);
+}
+
+bool ImmesgDecorOnlist::addOneUsr(int uid, const char *name, int avicon)
+{
+    if (!addMesgData(sizeof(OnlistUsr_t))){
+        return 0;
+    }
+    onlistUsrPtr->uid = htonl(uid);
+    onlistUsrPtr->avicon = htonl(avicon);
+    strncpy(onlistUsrPtr->name, name, sizeof(onlistUsrPtr->name));
+    ++onlistUsrPtr;
+    addCount();
+    return 1;
+}
+
+void ImmesgDecorOnlist::setHadMore(bool b)
+{
+    int h = b;
+
+    onlistCountPtr->hadMore = htonl(h);
+}
+
+void ImmesgDecorOnlist::addCount()
+{
+    onlistCountPtr->n = htonl(getUsrCount() + 1);
+}
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////

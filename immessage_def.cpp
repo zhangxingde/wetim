@@ -6,6 +6,12 @@
 ImmessageMan::ImmessageMan(ImmessageMan *origImmesgPtr)
 {
     mOrigImmesgPtr = origImmesgPtr;
+    mConstOrigImmesgPtr = origImmesgPtr;
+}
+
+ImmessageMan::ImmessageMan(const ImmessageMan *origImmesgPtr):mConstOrigImmesgPtr(origImmesgPtr)
+{
+
 }
 
 void ImmessageMan::setDstSrcUsr(int dst, int src)
@@ -13,8 +19,8 @@ void ImmessageMan::setDstSrcUsr(int dst, int src)
     mOrigImmesgPtr->setDstSrcUsr(dst,src);
 }
 
-int ImmessageMan::getDstUsrId() const {return mOrigImmesgPtr->getDstUsrId();}
-int ImmessageMan::getSrcUsrId() const {return mOrigImmesgPtr->getSrcUsrId();}
+int ImmessageMan::getDstUsrId() const {return mConstOrigImmesgPtr->getDstUsrId();}
+int ImmessageMan::getSrcUsrId() const {return mConstOrigImmesgPtr->getSrcUsrId();}
 
 unsigned int ImmessageMan::addMesgData(unsigned int len, const void *p)
 {
@@ -23,20 +29,20 @@ unsigned int ImmessageMan::addMesgData(unsigned int len, const void *p)
 
 const void* ImmessageMan::getDataPtr() const
 {
-    return mOrigImmesgPtr->getDataPtr();
+    return mConstOrigImmesgPtr->getDataPtr();
 }
 
 unsigned int ImmessageMan::length() const
 {
-    return mOrigImmesgPtr->length();
+    return mConstOrigImmesgPtr->length();
 }
 
 unsigned int ImmessageMan::mesgLength() const
 {
-    return mOrigImmesgPtr->mesgLength();
+    return mConstOrigImmesgPtr->mesgLength();
 }
 
-const char *ImmessageMan::getMesgDataPtr() const {return mOrigImmesgPtr->getMesgDataPtr();}
+const char *ImmessageMan::getMesgDataPtr() const {return mConstOrigImmesgPtr->getMesgDataPtr();}
 
 
 ImmessageData::ImmessageData(Imesgtpe_t t):ImmessageMan(this)
@@ -112,6 +118,9 @@ bool ImmessageData::isValid() const
         return 0;
     }
     if (*(unsigned int*)(mesg.head.mesgData + ntohl(mesg.head.mesgLen) + 1) != htonl(IMMESG_CHCK2)){
+        return 0;
+    }
+    if (getMesgType() < IMMESG_NONE || getMesgType() >= __IMMESG_MAX_NUM){
         return 0;
     }
     return 1;

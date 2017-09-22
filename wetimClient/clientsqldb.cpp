@@ -59,17 +59,15 @@ bool ClientSqlDb::setLogonSevSeting(const char *sev, unsigned short tport, unsig
    return logonDb.runQuery(row,where);
 }
 
-bool ClientSqlDb::queryLogonSevAddr(char *dst, unsigned int len)
+const char* ClientSqlDb::queryLogonSevAddr()
 {
     SqlQueryDataRows rows;
     std::string cmd = "select " +std::string(FIELD_LOGON_SEVADDR) +std::string(" from ") + std::string(TABLE_NAME_LOGON)+std::string(" limit 1");
 
-    if (!dst)
-        return 0;
-    dst[0] = 0;
+    logonSevAddr[0] = 0;
     if (logonDb.runQuery(cmd,rows) && rows.size()){
-        strncpy(dst, rows[0][0].getString(),len);
-        return 1;
+        strncpy(logonSevAddr, rows[0][0].getString(),sizeof (logonSevAddr));
+        return logonSevAddr;
     }
     return 0;
 }

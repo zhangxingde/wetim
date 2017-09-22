@@ -15,7 +15,7 @@ do{ \
     (n)->pre = n;\
 }while (0)
 
-#define LLIST_INIT2(n) ll_list_t{n,n}
+#define LLIST_INIT2(n) {n,n}
 #define LLIST_EMPTY(n) ((n) == (n)->next)
 /*
  *LLIST_ADD_TAIL(front,add):

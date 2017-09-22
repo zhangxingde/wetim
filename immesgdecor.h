@@ -3,7 +3,7 @@
 #include <string.h>
 #include "immessage_def.h"
 
-class ImessageApplyNum : public ImmessageMan
+class ImmesgDecorApplyNum : public ImmessageMan
 {
 public:
     #pragma pack(1)
@@ -15,8 +15,9 @@ public:
     }ApplyUsrInfos_t;
     #pragma pack()
 
-    ImessageApplyNum(ImmessageMan *imesgDataPtr);
-    ~ImessageApplyNum() {}
+    ImmesgDecorApplyNum(ImmessageMan *imesgDataPtr);
+    ImmesgDecorApplyNum(const ImmessageMan *imesgDataPtr);
+    ~ImmesgDecorApplyNum() {}
     void setUserName (const char *name){if (name) strncpy(usrinfoptr->name, name, sizeof(usrinfoptr->name));}
     void setUserPasswd (const char *pass) {if (pass) strncpy(usrinfoptr->passwd, pass, sizeof(usrinfoptr->passwd));}
     void setUid (int id) {usrinfoptr->uid = id;}
@@ -34,7 +35,7 @@ private:
     ApplyUsrInfos_t *usrinfoptr;
 };
 
-class ImessageLogon : public ImmessageMan
+class ImmesgDecorLogon : public ImmessageMan
 {
 public:
     #pragma pack(1)
@@ -43,7 +44,8 @@ public:
         int succ;
     }LogonUsr_t;
     #pragma pack()
-    ImessageLogon (ImmessageMan *m);
+    ImmesgDecorLogon (ImmessageMan *m);
+    ImmesgDecorLogon (const ImmessageMan *m);
     void setLogonPassword (const char *pass);
     const char* getPassword() {return logonUsrPtr->passwd;}
     void setAuthSucc (int b);
@@ -55,6 +57,37 @@ private:
     void pushMemLength ();
 };
 
+class ImmesgDecorOnlist : public ImmessageMan
+{
+public:
+    #pragma pack(1)
+    typedef struct {
+        int n;
+        int hadMore;
+    }OnlistCount_t;
+
+    typedef struct {
+        int uid;
+        char name[32];
+        int avicon;
+    }OnlistUsr_t;
+    #pragma pack()
+
+    ImmesgDecorOnlist (ImmessageMan *m);
+    ImmesgDecorOnlist (const ImmessageMan *m);
+    bool addOneUsr (int uid, const char *name, int avicon);
+    const OnlistUsr_t* getUsrListHead () const {return onlistUsrPtr;}
+    int getUsrCount() const {return ntohl(onlistCountPtr->n);}
+    void setUsrCount (int n) {onlistCountPtr->n = htonl(n);}//仅仅用于客服端的再次请求数据
+    void setHadMore (bool b);
+    bool isHadMore () const {return ntohl(onlistCountPtr->hadMore);}
+private:
+    OnlistCount_t *onlistCountPtr;
+    OnlistUsr_t *onlistUsrPtr;
+
+    void addCount ();
+};
+
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -63,7 +96,7 @@ public:
     ImmesgObsev (Imesgtpe_t t){imtype = t;}
     virtual ~ImmesgObsev() {}
     int getMesgType () {return imtype;}
-    virtual void workIngWithRecvMessage (ImmessageData &im, void *p) = 0;
+    virtual void workIngWithRecvMessage (const ImmessageData &im, const char *addr, int port, void *p) = 0;
 private:
     Imesgtpe_t imtype;
 };

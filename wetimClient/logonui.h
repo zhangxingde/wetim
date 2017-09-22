@@ -19,6 +19,7 @@ public:
     ~LogonUi();
     void setApplyNumInfo (const char *name, const char *pass, int uid, int avicon);
     void setLogonAuthState (int succd);
+    int getMineUsrId (){return lineUserName.currentText().toInt();}
 private slots:
     void dispSeting ();
     void getLogonSevSeting ();

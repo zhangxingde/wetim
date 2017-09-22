@@ -1,19 +1,26 @@
 ﻿#include <QApplication>
 #include "logonui.h"
+#include "mainpanel.h"
 #include <QDebug>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    LogonUi *logon = new LogonUi;
     int r = 0;
-
+#if 1
+    LogonUi *logon = new LogonUi;
     logon->show();
     r = logon->exec();
-    delete logon;
     if (r == QDialog::Rejected){
+        delete logon;
         return 1;
     }
+#endif
+
+    MainPanel *panelPtr = new MainPanel(logon->getMineUsrId());
+    delete logon;
+    panelPtr->show();
     r = a.exec();
+    delete panelPtr;
     return r;
 }

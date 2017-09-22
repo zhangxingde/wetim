@@ -9,7 +9,7 @@
 #include "logonui.h"
 #include "climesgobsev.h"
 
-LogonUi::LogonUi():
+LogonUi::LogonUi():QDialog(0, Qt::Window),
     hight(300), width(430),cfgPath(QDir::homePath()+"/"+SYSCFGROOT)
 {
     dbptr = ClientSqlDb::getInstance();
@@ -120,6 +120,7 @@ void LogonUi::setLogonInfoLayout()
     layoutGridLogonPtr->addWidget(labUserPasswdPtr = new QLabel(QStringLiteral("密  码")),1, 0);
     layoutGridLogonPtr->addWidget(&linePasswd,1, 1);
     logOnBtnPtr = new QPushButton(QStringLiteral("登 录"));
+    logOnBtnPtr->setDefault(1);
     connect(logOnBtnPtr, SIGNAL(clicked(bool)), this, SLOT(sendLogonMessage()));
     layoutGridLogonPtr->addWidget(logOnBtnPtr, 2,1);
     hlayoutPtr->addLayout(layoutGridLogonPtr);
@@ -201,11 +202,12 @@ void LogonUi::dispSeting()
     sysSetingBoxPtrs[!clkSetingBtn]->show();
     if (clkSetingBtn){
         int tport, uport;
+        const char *addr;
 
-        if (dbptr->queryLogonSevAddr(oldSevAddr, sizeof(oldSevAddr)) &&
+        if ((addr = dbptr->queryLogonSevAddr()) &&
             (tport = dbptr->queryLogonSevTcport()) > 0 &&
                 (uport = dbptr->queryLogonSevUdport()) > 0){
-            setDisplayLogonSevInfo(oldSevAddr, tport, uport);
+            setDisplayLogonSevInfo(addr, tport, uport);
         }
     }
     clkSetingBtn = !clkSetingBtn;
@@ -233,13 +235,14 @@ void LogonUi::setDisplayLogonSevInfo(const char *sev, int tport, int uport)
 void LogonUi::applyNumFromServer()
 {
     int tport, uport;
+    const char *addr;
 
-    if (dbptr->queryLogonSevAddr(oldSevAddr, sizeof(oldSevAddr)) &&
+    if ((addr = dbptr->queryLogonSevAddr()) &&
         (tport = dbptr->queryLogonSevTcport()) > 0 &&
             (uport = dbptr->queryLogonSevUdport()) > 0){
         ImmessageData m(IMMESG_APPLYNUM);
         //imChannelPtr->sendTcpData2Server(oldSevAddr, tport, m);
-        imChannelPtr->pushTcpDataOut(m, oldSevAddr, tport);
+        imChannelPtr->pushTcpDataOut(m, addr, tport);
     }else{
         dispNetworkErrorInfo(0, QStringLiteral("查询登陆服务器信息失败"));
     }
@@ -261,15 +264,16 @@ void LogonUi::reflashUsrDropDownlist()
 void LogonUi::sendLogonMessage()
 {
     ImmessageData m(IMMESG_USER_LOGON);
-    ImessageLogon logon(&m);
+    ImmesgDecorLogon logon(&m);
     int tport;
+    const  char *addr;
 
 
-    if (dbptr->queryLogonSevAddr(oldSevAddr, sizeof(oldSevAddr)) &&
+    if ((addr = dbptr->queryLogonSevAddr()) &&
             (tport = dbptr->queryLogonSevTcport()) > 0){
         logon.setDstSrcUsr(0, lineUserName.currentText().toInt());
         logon.setLogonPassword(linePasswd.text().toStdString().c_str());
-        imChannelPtr->pushTcpDataOut(m, oldSevAddr,tport);
+        imChannelPtr->pushTcpDataOut(m, addr,tport);
         logOnBtnPtr->setDisabled(1);
     }else{
         dispNetworkErrorInfo(0, QStringLiteral("查询登陆服务器信息失败"));

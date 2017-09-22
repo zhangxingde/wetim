@@ -123,6 +123,7 @@ tcpSockHandle_c::tcpSockHandle_c()
     :sockHandle_c()
 {
 	LLIST_INIT(&sendQueueListHead);
+    mempollPtr = 0;
 }
 
 
@@ -200,61 +201,86 @@ int tcpSockHandle_c:: socksend(sockRotating_c &poll)
 udpSockHandle_c::udpSockHandle_c()
     :sockHandle_c()
 {
-    dataSendLen = dataInLen = dataOutLen = 0;
+    mempollPtr = 0;
+    LLIST_INIT(&sendQueueListHead);
 }
 
 
 int udpSockHandle_c:: sockrecv(sockRotating_c &poll)
 {
-    int len = 0, r, maxRecvLen = maxDataLen - 1;
-    udpDataIterm_t *p = (udpDataIterm_t*)memBufin;
+    memBbuff_t *b = 0;
+    ll_list_t *head = 0;
+    int len = 0, r;
+    udpDataIterm_t *p = 0;
 
-    p->addrLen = sizeof(p->inAddr);
-    while ((r = recvfrom(sockfd, p->dataChar + len, maxRecvLen - len, 0,
-                         (struct sockaddr*)&p->inAddr, &p->addrLen)) > 0){
-        len += r;
-    }
+    do {
+        if (len == 0){
+            b = mempollPtr->getMembuf();
+            p = (udpDataIterm_t*)b->s;
+            memset(p, 0, sizeof (*p));
+            p->addrLen = sizeof(p->inAddr);
+            b->dataEndPtr = p->dataChar;
+            len = b->memTailPtr - b->dataEndPtr;
+            if (head)
+                LLIST_ADD_TAIL(head, &b->list);
+            else
+                head = &b->list;
+        }
+        if ((r = recvfrom(sockfd, b->dataEndPtr, len, 0, (struct sockaddr*)&p->inAddr, &p->addrLen)) > 0){
+            b->dataEndPtr += r;
+            p->dataLen += r;
+        }
+        len = b->memTailPtr - b->dataEndPtr;
+    }while (r > 0);
     if ((r < 0 && (errno != EAGAIN)) || (r == 0)){
+        mempollPtr->freeMemList(head);
         return -1;
     }
-    p->dataChar[len] = 0;
-    p->dataLen = len;
-
-    if ((r = doSelfWorkByRecvData(p)) > 0){
-        poll.modifySock2Rotating(this, 0, 1);
+    if ((r = doSelfWorkByRecvData(head)) > 0){
+        poll.modifySock2Rotating(this, 1,1);
     }else if (r == 0){
         poll.modifySock2Rotating(this, 1, 0);
     }
     return r;
 }
-
+#include "stdebug.h"
 int udpSockHandle_c:: socksend(sockRotating_c &poll)
 {
-    int r;
-    udpDataIterm_t *p = (udpDataIterm_t*)memBufout;
+    int r, f, len = 0;
+    memBbuff_t *p = 0;
+    ll_list_t *head = 0;
+    udpDataIterm_t *u = 0;
 
-    if (!dataOutLen){//待发送的数据长度为0,需要取数据
-        dataSendLen = 0;
-        p->dataLen = maxDataLen;
-        dataOutLen = doSelfWorkBySendData(p);
-        p->inAddr.sin_family = AF_INET;
-        if (dataOutLen == 0){
-            poll.modifySock2Rotating(this,1, 0);
-            return 0;
-        }else if (dataOutLen < 0){
-            dataOutLen = 0;
-            return -1;
+    if (LLIST_EMPTY(&sendQueueListHead)){//等到把上次的历史数据发送完毕后，再从新取数据
+        f = doSelfWorkBySendData(&sendQueueListHead);
+        if (LLIST_EMPTY(&sendQueueListHead)){
+            poll.modifySock2Rotating(this, 1, 0);
+            return f;
         }
     }
-    while ((r = sendto(sockfd, p->dataChar + dataSendLen, dataOutLen, 0,
-                       (struct sockaddr*)&p->inAddr, p->addrLen)) > 0){
-        dataSendLen += r;
-        dataOutLen -= r;
-    }
+    do {
+        if (len == 0 && !LLIST_EMPTY(&sendQueueListHead)){
+            p = MEMBER_ENTRY(sendQueueListHead.next, memBbuff_t, list);
+            u = (udpDataIterm_t*)p->s;
+            p->dataBeginPtr = u->dataChar;
+            len = p->dataEndPtr - p->dataBeginPtr;
+            LLIST_DEL(&p->list);
+            if (head)
+                LLIST_ADD_TAIL(head, &p->list);
+            else
+                 head = &p->list;
+        }
+        r = 0;
+        if (len > 0 && (r = sendto(sockfd, p->dataBeginPtr, len, 0, (struct sockaddr*)&u->inAddr, u->addrLen)) > 0){
+            p->dataBeginPtr += r;
+        }
+        len = p->dataEndPtr - p->dataBeginPtr;
+    }while (r > 0);
+    mempollPtr->freeMemList(head);
     if (r < 0 && (errno != EAGAIN)){
         return -1;
     }
-    poll.modifySock2Rotating(this,0, 1);
-    return 0;
+    poll.modifySock2Rotating(this,1, 1);
+    return f;
 }
 

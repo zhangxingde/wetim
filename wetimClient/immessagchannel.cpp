@@ -1,11 +1,13 @@
 ﻿#include "immessagchannel.h"
 #include "tcpconnect.h"
 #include "immessage_def.h"
+#include "udpclient.h"
 
 
 ImmesageChannel::ImmesageChannel()
 {
     isQuit = 0;
+    udpClientPtr = new UdpClient(this);
     memset(imObsevers, 0 ,sizeof(imObsevers));
     memset(imObsevArg, 0, sizeof(imObsevArg));
     start();
@@ -17,6 +19,7 @@ ImmesageChannel::~ImmesageChannel()
     isQuit = 1;
     wait();
     delete messageQueuePtr;
+    delete udpClientPtr;
     for (unsigned int i = 0; i < sizeof(imObsevers)/sizeof(imObsevers[0]); ++i){
         if (imObsevers[i])
             delete imObsevers[i];
@@ -58,6 +61,28 @@ bool ImmesageChannel::pushTcpDataIn(const ImmessageData &data, const QString &ad
     return messageQueuePtr->pushMesg(data, addr, port, 0,1);
 }
 
+bool ImmesageChannel::pushUdpDataOut(const ImmessageData &data, const QString &addr, int port)
+{
+    return messageQueuePtr->pushMesg(data, addr, port,1, 0);
+}
+
+bool ImmesageChannel::pushUdpDataIn(const ImmessageData &data, const QString &addr, int port)
+{
+    return messageQueuePtr->pushMesg(data, addr, port, 0, 0);
+}
+
+void ImmesageChannel::udpDataRecv()
+{
+    QByteArray data;
+    QString addr;
+    int port;
+    ImmessageData m;
+
+    udpClientPtr->recvData(data,addr, port);
+    m.recvRawData(data.constData(), data.length());
+    pushUdpDataIn(m, addr, port);
+}
+
 bool ImmesageChannel::regOneImobsever(ImmesgObsev *obsever, void *p)
 {
     int t = obsever->getMesgType();
@@ -69,7 +94,7 @@ bool ImmesageChannel::regOneImobsever(ImmesgObsev *obsever, void *p)
     return 1;
 }
 
-bool ImmesageChannel::publishAnImmessage(ImmessageData &src)
+bool ImmesageChannel::publishAnImmessage(ImmessageData &src, QString &addr, int port)
 {
     int t;
 
@@ -78,7 +103,7 @@ bool ImmesageChannel::publishAnImmessage(ImmessageData &src)
     }
     t = src.getMesgType();
     if (imObsevers[t]){
-        imObsevers[t]->workIngWithRecvMessage(src, imObsevArg[t]);
+        imObsevers[t]->workIngWithRecvMessage(src, addr.toStdString().c_str(), port,imObsevArg[t]);
     }
     return 1;
 }
@@ -90,11 +115,13 @@ void ImmesageChannel::run()
 
     while (!isQuit){
         messageQueuePtr->getMesg(mcell.m, mcell.addr, mcell.port, mcell.dir, mcell.isTcp);
-        if (mcell.dir){
+        if (mcell.dir){//out
             if (mcell.isTcp)
                 sendTcpData2Server(mcell.addr, mcell.port, mcell.m);
+            else
+                udpClientPtr->sendData(mcell.m.getDataPtr(), mcell.m.length(), mcell.addr, mcell.port);
         }else{
-            publishAnImmessage(mcell.m);
+            publishAnImmessage(mcell.m, mcell.addr, mcell.port);
         }
     }
 }

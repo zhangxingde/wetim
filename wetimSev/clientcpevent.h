@@ -26,10 +26,12 @@ private:
     int doSelfWorkByRecvData(ll_list_t *head);
     int doSelfWorkBySendData(ll_list_t *head);
 
-    int doSevByMesgType (ImmessageData &imsgData, ll_list_t *out);
+    int doSevByMesgType (const ImmessageData &imsgData, ll_list_t *out);
 
-    int replyCmdApplyNum (ImmessageData &imsgData, ll_list_t *out);
-    int replyCmdLogonAuth (ImmessageData &imsgData, ll_list_t *out);
+    int replyCmdApplyNum (const ImmessageData &imsgData, ll_list_t *out);
+    int replyCmdLogonAuth (const ImmessageData &imsgData, ll_list_t *out);
+    int replyCmdUsrOnlist(const ImmessageData &imsgData, ll_list_t *out);
+
 };
 
 class ClientTcpAccept : public acceptSockHandle_c, public SingletonTempBase<ClientTcpAccept>
@@ -48,13 +50,18 @@ private:
 
 
     memPool_c mem;
-    SevSqlDB sqlite3db;
+    SevSqlDB *sqlite3dbPtr;
     ClientTcpImmesgEvent *clientsPtr;
     void setupClientPool ();
     void destroyClientPool ();
 
     sockHandle_c* accept(int sock, struct sockaddr_in *addr);
 };
+
+//////////////////////////////////////////
+//////////////////////////////////////////
+
+
 
 #if 0
 class imChatUsrStatus_c;

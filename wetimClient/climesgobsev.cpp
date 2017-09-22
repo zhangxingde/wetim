@@ -1,5 +1,6 @@
 ﻿#include "climesgobsev.h"
 #include "logonui.h"
+#include "mainpanel.h"
 #include <QDebug>
 
 ImesgApplyNumObsev::ImesgApplyNumObsev():ImmesgObsev(IMMESG_APPLYNUM)
@@ -7,17 +8,39 @@ ImesgApplyNumObsev::ImesgApplyNumObsev():ImmesgObsev(IMMESG_APPLYNUM)
 
 }
 
-void ImesgApplyNumObsev::workIngWithRecvMessage(ImmessageData &im, void *p)
+void ImesgApplyNumObsev::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
 {
-    ImessageApplyNum m(&im);
+    ImmesgDecorApplyNum m(&im);
 
 
     ((LogonUi*)p)->setApplyNumInfo(m.getName(), m.getPasswd(), ntohl(m.getUid()), ntohl(m.getAvicon()));
 }
 
 //////////////////////////
-void ImesgLononObsev::workIngWithRecvMessage(ImmessageData &im, void *p)
+void ImesgLononObsev::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
 {
-    ImessageLogon m(&im);
+    ImmesgDecorLogon m(&im);
     ((LogonUi*)p)->setLogonAuthState((m.isAuthSucced()));
+}
+
+void ImesgKeepAliveObsev::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
+{
+    ((MainPanel*)p)->imMesgRecvKeepAlive(im);
+}
+
+void ImesgUsrOnlistObsev::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
+{
+    MainPanel *panelPtr = (MainPanel*)p;
+    ImmesgDecorOnlist onlist(&im);
+    const ImmesgDecorOnlist::OnlistUsr_t *head = onlist.getUsrListHead();
+    int n = onlist.getUsrCount();
+
+    qDebug()<<" n = "<<n;
+    for (int i = 0; i < n; ++i){
+        head += i;
+        panelPtr->imMesgPutUsr2UsrListPanel(ntohl(head->uid), head->name, ntohl(head->avicon));
+    }
+    if (onlist.isHadMore()){
+        panelPtr->getUsrOnLinelist();
+    }
 }

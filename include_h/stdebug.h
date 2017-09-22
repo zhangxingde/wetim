@@ -2,8 +2,7 @@
 #define __STDEBUG_H
 #include <stdio.h>
 #include <errno.h>
-#include <pthread.h>
-#define STD_DEBUG(format, ...) printf("%s (pthid = %lu, line = %d):"format"\n",__FILE__,pthread_self(),__LINE__,##__VA_ARGS__);\
+#define STD_DEBUG(format, ...) printf("%s (line = %d):"format"\n",__FILE__,__LINE__,##__VA_ARGS__);\
     fflush(stdout)
 
 #if 0

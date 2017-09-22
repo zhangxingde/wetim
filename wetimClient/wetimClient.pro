@@ -40,7 +40,11 @@ SOURCES += \
     ../immesgdecor.cpp \
     immessagequeue.cpp \
     clientsqldb.cpp \
-    climesgobsev.cpp
+    climesgobsev.cpp \
+    mainpanel.cpp \
+    usrbaseinfowidget.cpp \
+    usrfriendlistwidget.cpp \
+    udpclient.cpp
 
 HEADERS += \
     ../sql/sqlite3/sqlite3.h \
@@ -58,7 +62,14 @@ HEADERS += \
     ../immesgdecor.h \
     immessagequeue.h \
     clientsqldb.h \
-    climesgobsev.h
+    climesgobsev.h \
+    mainpanel.h \
+    usrbaseinfowidget.h \
+    usrfriendlistwidget.h \
+    udpclient.h
 
 SUBDIRS += \
     wetimClient.pro
+
+FORMS += \
+    mainpanel.ui

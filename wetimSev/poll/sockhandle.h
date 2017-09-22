@@ -90,12 +90,6 @@ private:
     int socksend(sockRotating_c &poll);
 
 	ll_list_t sendQueueListHead;
-
-    static const int maxDataLen = 16*1024;
-    int dataInLen, dataOutLen, dataSendLen;
-    char memBufin[maxDataLen];
-    char memBufout[maxDataLen];
-
 };
 /////////////////////////////////
 /////////////////////////////////
@@ -104,24 +98,29 @@ private:
 class udpSockHandle_c : public sockHandle_c
 {
 public:
+    #pragma pack(1)
     typedef struct {
         struct sockaddr_in inAddr;
         socklen_t addrLen;
-        int dataLen;
-        char dataChar[0];
+        unsigned int dataLen;
+        char dataChar[1];
     }udpDataIterm_t;
+    #pragma pack()
 
     udpSockHandle_c();
+    void setMemPoolPtr (memPool_c *p) {mempollPtr = p;}
 
 protected:
+    memPool_c *mempollPtr;
+    int getUdpDataItermHeadLen () {return sizeof(udpDataIterm_t) - 1;}
 
-    virtual int doSelfWorkByRecvData (const udpDataIterm_t *src) = 0;
+    virtual int doSelfWorkByRecvData (ll_list_t *head) = 0;
     /*int r = doSelfWorkByRecvData()
      *r > 0 , some data will be send, doSelfWorkBySendData() will be called by epoll;
      *r == 0 , no data to send, and will to linsten data in;
      *r < 0 , do something error, will to close this connect;
     */
-    virtual int doSelfWorkBySendData (udpDataIterm_t *dst) = 0;
+    virtual int doSelfWorkBySendData (ll_list_t *head) = 0;
     /*int len = doSelfWorkBySendData()
      *len > 0 , continue to send the data in len length, and doSelfWorkBySendData() will be called by epoll one more;
      *len == 0 , no more data to send, and will to linsten data in;
@@ -132,10 +131,8 @@ private:
     int sockrecv(sockRotating_c &poll);
     int socksend(sockRotating_c &poll);
 
-    static const int maxDataLen = 16*1024;
-    int dataInLen, dataOutLen, dataSendLen;
-    char memBufin[sizeof(udpDataIterm_t) + maxDataLen];
-    char memBufout[sizeof(udpDataIterm_t)+ maxDataLen];
+    ll_list_t sendQueueListHead;
+
 
 };
 

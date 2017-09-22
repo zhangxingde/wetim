@@ -24,7 +24,7 @@ public:
     int getErrorNo () {return logonDb.getErrno();}
     const char* getErrorStr () {return logonDb.getError();}
     bool setLogonSevSeting (const char *sev, unsigned short tport, unsigned short uport, const char *oldSevAddr);
-    bool queryLogonSevAddr (char *dst, unsigned int len);
+    const char* queryLogonSevAddr ();
     int  queryLogonSevTcport ();
     int  queryLogonSevUdport ();
 
@@ -35,6 +35,7 @@ private:
     ClientSqlDb();
     ~ClientSqlDb();
     Sqlite3Man logonDb;
+    char logonSevAddr[32];
 
     bool queryUsrBaseInfo (SqlQueryDataRows &row, const std::string &where = std::string());
 };

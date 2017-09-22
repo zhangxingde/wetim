@@ -13,9 +13,13 @@
 typedef enum {
     IMMESG_NONE = 0,
     IMMESG_APPLYNUM,
+
     IMMESG_USER_LOGON ,
     IMMESG_USER_LOGOUT,
+    IMMESG_USER_BROAD,
     IMMESG_USER_ONLIST,
+
+    IMMESG_UDP_KEEPALIVE,
 
     IMMESG_DATA_P2PUDP,
     IMMESG_DATA_ACK,
@@ -49,6 +53,7 @@ class ImmessageMan
 {
 public:
     ImmessageMan (ImmessageMan *origImmesgPtr);
+    ImmessageMan (const ImmessageMan *origImmesgPtr);
     virtual ~ImmessageMan() {}
     virtual void setDstSrcUsr (int dst, int src);
     virtual int getDstUsrId () const;
@@ -60,6 +65,7 @@ public:
     virtual const char* getMesgDataPtr () const;
 protected:
     ImmessageMan *mOrigImmesgPtr;
+    const ImmessageMan *mConstOrigImmesgPtr;
 
 };
 

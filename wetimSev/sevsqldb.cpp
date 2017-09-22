@@ -24,6 +24,8 @@ SevSqlDB::SevSqlDB():sqlite3db("wetimesev.db")
     }
 }
 
+SevSqlDB::~SevSqlDB() {}
+
 int SevSqlDB::getNewUsrID()
 {
     int idnew = ((getTotalUsrCount() + 1)<<8) + (time(0)&0xff);

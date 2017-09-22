@@ -1,13 +1,15 @@
 ﻿#include <string.h>
 #include <iostream>
-#include "clientevent.h"
+#include "clientcpevent.h"
 #include "immesgdecor.h"
 #include "stdebug.h"
+#include "usronlinestate.h"
 
 ClientTcpAccept::ClientTcpAccept():
     poolSize(1024), mem(2048,1024)
 {
     setSockInetAddr(sockHandle_c::getTcpListenSock(NULL, 12315, 1024), 0);
+    sqlite3dbPtr = SevSqlDB::getInstance();
     clipoolptr.clear();
     setupClientPool();
 }
@@ -15,6 +17,7 @@ ClientTcpAccept::ClientTcpAccept():
 ClientTcpAccept::~ClientTcpAccept()
 {
     destroyClientPool();
+    sqlite3dbPtr->close();
 }
 
 void ClientTcpAccept::setupClientPool()
@@ -55,7 +58,7 @@ sockHandle_c* ClientTcpAccept::accept(int sock, sockaddr_in *addr)
     if (p){
         p->setSockInetAddr(sock, addr);
         p->setMemPoolPtr(&mem);
-        p->setSqlDbPtr(&sqlite3db);
+        p->setSqlDbPtr(sqlite3dbPtr);
     }
     return p;
 }
@@ -174,23 +177,24 @@ int ClientTcpImmesgEvent::doSelfWorkBySendData(ll_list_t *head)
     return retnum;
 }
 
-int ClientTcpImmesgEvent::doSevByMesgType(ImmessageData &imsgData, ll_list_t *out)
+int ClientTcpImmesgEvent::doSevByMesgType(const ImmessageData &imsgData, ll_list_t *out)
 {
     switch (imsgData.getMesgType()){
         case IMMESG_APPLYNUM:
             return replyCmdApplyNum(imsgData, out);
         case IMMESG_USER_LOGON:
             return replyCmdLogonAuth(imsgData, out);
-
+        case IMMESG_USER_ONLIST:
+            return replyCmdUsrOnlist(imsgData, out);
     }
     return -1;
 }
 
-int ClientTcpImmesgEvent::replyCmdApplyNum(ImmessageData &imsgData, ll_list_t *out)
+int ClientTcpImmesgEvent::replyCmdApplyNum(const ImmessageData &imsgData, ll_list_t *out)
 {
     ImmessageData m(IMMESG_APPLYNUM);
-    ImessageApplyNum apply(&m);
-    ImessageApplyNum::ApplyUsrInfos_t userinfo;
+    ImmesgDecorApplyNum apply(&m);
+    ImmesgDecorApplyNum::ApplyUsrInfos_t userinfo;
 
     userinfo.uid = mdbptr->getNewUsrID();
     if (userinfo.uid <= 0)
@@ -212,11 +216,11 @@ int ClientTcpImmesgEvent::replyCmdApplyNum(ImmessageData &imsgData, ll_list_t *o
     return 0;
 }
 
-int ClientTcpImmesgEvent::replyCmdLogonAuth(ImmessageData &imsgData, ll_list_t *out)
+int ClientTcpImmesgEvent::replyCmdLogonAuth(const ImmessageData &imsgData, ll_list_t *out)
 {
-    ImessageLogon logon(&imsgData);
+    ImmesgDecorLogon logon(&imsgData);
     ImmessageData m(IMMESG_USER_LOGON);
-    ImessageLogon re(&m);
+    ImmesgDecorLogon re(&m);
     char passwd[32];
 
     if (mdbptr->getUsrPasswdByUsrID(logon.getSrcUsrId(), passwd, sizeof(passwd)) &&
@@ -233,6 +237,37 @@ int ClientTcpImmesgEvent::replyCmdLogonAuth(ImmessageData &imsgData, ll_list_t *
     }
     return 0;
 }
+
+int ClientTcpImmesgEvent::replyCmdUsrOnlist(const ImmessageData &imsgData, ll_list_t *out)
+{
+    ImmesgDecorOnlist from(&imsgData);
+    UsrOnlineState onState;
+    const int maxn = 20;
+    UsrOnlineState::UsrOnState_t onbuf[maxn];
+    int n;
+
+    ImmessageData m(IMMESG_USER_ONLIST);
+    ImmesgDecorOnlist to(&m);
+
+    n = onState.getOnlineUsrInfo(onbuf, maxn, from.getUsrCount());
+    to.setHadMore(n == maxn ? 1:0);
+    for (int i = 0; i < n; ++i){
+        char name[32] = {0};
+        mdbptr->getUsrNameByUsrID(onbuf[i].uid, name, sizeof(name));
+        to.addOneUsr(onbuf[i].uid, name, mdbptr->getAvaiconIdByUsrID(from.getSrcUsrId()));
+    }
+    ll_list_t *l = mempollPtr->fflushData2QueueLList(to.getDataPtr(),to.length());
+    if (l){STD_DEBUG("old n = %d, find n = %d", from.getUsrCount(), n);
+        LLIST_ADD_TAIL(out, l);
+        return 1;
+    }STD_DEBUG();
+    return 0;
+}
+
+//////////////////////////////////////////
+//////////////////////////////////////////
+
+
 
 #if 0
 #include "immessage_def.h"
