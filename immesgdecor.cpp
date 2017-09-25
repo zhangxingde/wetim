@@ -94,12 +94,14 @@ bool ImmesgDecorOnlist::addOneUsr(int uid, const char *name, int avicon)
     return 1;
 }
 
+#if 0
 void ImmesgDecorOnlist::setHadMore(bool b)
 {
     int h = b;
 
     onlistCountPtr->hadMore = htonl(h);
 }
+#endif
 
 void ImmesgDecorOnlist::addCount()
 {

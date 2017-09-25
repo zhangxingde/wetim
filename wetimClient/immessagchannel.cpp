@@ -40,7 +40,7 @@ unsigned int ImmesageChannel::sendTcpData2Server(const QString &addr, unsigned i
         b = len > 0 && mtcpsockptr->recvData(remData, peerAddr, peerPort);
         mtcpsockptr->close();
         if (b){
-            ImmessageData m;
+            ImmessageData m;qDebug()<<"tcp recv len = "<<remData.length();
 
             m.recvRawData(remData.constData(), remData.length());
             pushTcpDataIn(m, peerAddr, peerPort);

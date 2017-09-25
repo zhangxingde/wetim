@@ -10,8 +10,8 @@ UsrOnlineState::UsrOnlineState()
 
 bool UsrOnlineState::addUser(UsrOnState_t &u)
 {
+    removeUser(u.uid);
     std::pair<UsrOnLineMap::iterator, bool> ret = usrMap.insert(std::pair<int, UsrOnState_t>(u.uid, u));
-
     if (ret.second){
        LLIST_ADD_TAIL(&usrList, &ret.first->second.list);
     }
@@ -23,27 +23,40 @@ void UsrOnlineState::removeUser(int uid)
     UsrOnLineMap::iterator it = usrMap.find(uid);
 
     if (it != usrMap.end()){
-        LLIST_DEL(&(it->second).list);
+        LLIST_DEL(&(it->second.list));
         usrMap.erase(it);
     }
 }
 
-int UsrOnlineState::getOnlineUsrInfo(UsrOnState_t *u, int maxn, int begin)
+int UsrOnlineState::getOnlineUsrInfo(UsrOnState_t *u, int maxn, ll_list_t **lastEnd)
 {
-    ll_list_t * l= usrList.next;
+    ll_list_t *l= 0;
     int n = 0;
     UsrOnState_t *p = 0;
 
-    while ((l != &usrList) && (begin > 0)){
-        l = l->next;
-        --begin;
+    if (lastEnd && (*lastEnd)){
+        l = *lastEnd;
+    }else{
+        l = usrList.next;
     }
     while (l != &usrList && maxn > 0){
         p = MEMBER_ENTRY(l, UsrOnState_t, list);
-        *u = *p;
+        *(u+n) = *p;
         ++n;
         --maxn;
         l = l->next;
     }
+    *lastEnd = l;
     return n;
 }
+
+
+
+
+
+
+
+
+
+
+

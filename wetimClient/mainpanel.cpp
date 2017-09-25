@@ -65,6 +65,8 @@ void MainPanel::imMesgPutUsr2UsrListPanel(int uid, const char *name, int avicon)
     ++curFriendNum;
 
     QString log = "new usr " + QString::number(uid);
+    log += " ";
+    log += name;
     debuglogptr->append(log);
 
 
@@ -108,7 +110,6 @@ void MainPanel::getUsrOnLinelist()
         ImmessageData m(IMMESG_USER_ONLIST);
         ImmesgDecorOnlist on(&m);
         on.setDstSrcUsr(0,mineUsrId);
-        on.setUsrCount(curFriendNum);
         mesgChannelPtr->pushTcpDataOut(m, sevaddr, port);
     }
 }

@@ -85,7 +85,7 @@ unsigned int ImmessageData::addMesgData(unsigned int len, const void *p)
         memcpy(curMesgDataPtr, p, len);
     curMesgDataPtr += len;
     mesg.head.mesgLen = htonl(curMesgDataPtr - mesg.head.mesgData);
-    *(unsigned int*)(curMesgDataPtr + 1) = htonl(IMMESG_CHCK2);
+    *(unsigned int*)(curMesgDataPtr + sizeof(mesg.head.mesgData)) = htonl(IMMESG_CHCK2);
     return len;
 }
 

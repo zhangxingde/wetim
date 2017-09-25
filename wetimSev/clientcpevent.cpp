@@ -74,6 +74,7 @@ ClientTcpImmesgEvent::ClientTcpImmesgEvent(memPool_c *mempoolptr):
     LLIST_INIT(&outDataQueue);
     shouldRcvLen = rcvMesgLen = 0;
     mdbptr = 0;
+    lastRemainTaskType = -1;
 }
 
 void ClientTcpImmesgEvent::close()
@@ -93,6 +94,7 @@ void ClientTcpImmesgEvent::close()
         LLIST_DEL(&outDataQueue);
         mempollPtr->freeMemList(l);
     }
+    lastRemainTaskType = -1;
 }
 
 int ClientTcpImmesgEvent::doSelfWorkByRecvData(ll_list_t *head)
@@ -143,6 +145,10 @@ int ClientTcpImmesgEvent::doSelfWorkBySendData(ll_list_t *head)
     Immessage_t *m;
     ImmessageData messageData;
     int retnum = 0;
+
+    if (doTheLastRemainTask(lastRemainTaskType, NULL,head)){
+        return 1;
+    }
 
     while (!LLIST_EMPTY(&outDataQueue)){
         b = MEMBER_ENTRY(outDataQueue.next, memBbuff_t, list);
@@ -240,28 +246,47 @@ int ClientTcpImmesgEvent::replyCmdLogonAuth(const ImmessageData &imsgData, ll_li
 
 int ClientTcpImmesgEvent::replyCmdUsrOnlist(const ImmessageData &imsgData, ll_list_t *out)
 {
-    ImmesgDecorOnlist from(&imsgData);
+   return loopGetAllUsrList(0,out);
+}
+
+int ClientTcpImmesgEvent::doTheLastRemainTask(int cmdtpe, void *p, ll_list_t *out)
+{
+    if (cmdtpe == IMMESG_NONE)
+        return 0;
+    else if (cmdtpe == IMMESG_USER_ONLIST){
+        return loopGetAllUsrList(p,out);
+    }
+    return 0;
+}
+
+int ClientTcpImmesgEvent::loopGetAllUsrList(void *p, ll_list_t *out)
+{
+    static ll_list_t *lasEndPtr = 0;
+    ll_list_t *l = 0;
+
     UsrOnlineState onState;
-    const int maxn = 20;
+    const int maxn = 100;
     UsrOnlineState::UsrOnState_t onbuf[maxn];
     int n;
 
     ImmessageData m(IMMESG_USER_ONLIST);
     ImmesgDecorOnlist to(&m);
 
-    n = onState.getOnlineUsrInfo(onbuf, maxn, from.getUsrCount());
-    to.setHadMore(n == maxn ? 1:0);
-    for (int i = 0; i < n; ++i){
-        char name[32] = {0};
-        mdbptr->getUsrNameByUsrID(onbuf[i].uid, name, sizeof(name));
-        to.addOneUsr(onbuf[i].uid, name, mdbptr->getAvaiconIdByUsrID(from.getSrcUsrId()));
-    }
-    ll_list_t *l = mempollPtr->fflushData2QueueLList(to.getDataPtr(),to.length());
-    if (l){STD_DEBUG("old n = %d, find n = %d", from.getUsrCount(), n);
+    n = onState.getOnlineUsrInfo(onbuf, maxn, &lasEndPtr);
+    if (n > 0){
+        for (int i = 0; i < n; ++i){
+            char name[32] = {0};
+            mdbptr->getUsrNameByUsrID(onbuf[i].uid, name, sizeof(name));
+            to.addOneUsr(onbuf[i].uid, name, mdbptr->getAvaiconIdByUsrID(onbuf[i].uid));
+        }
+        l = mempollPtr->fflushData2QueueLList(to.getDataPtr(),to.length());
         LLIST_ADD_TAIL(out, l);
-        return 1;
-    }STD_DEBUG();
-    return 0;
+        lastRemainTaskType = IMMESG_USER_ONLIST;
+    }else{
+        lasEndPtr = 0;
+        lastRemainTaskType = IMMESG_NONE;
+    }
+    return l ? 1:0;
 }
 
 //////////////////////////////////////////

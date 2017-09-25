@@ -35,12 +35,9 @@ void ImesgUsrOnlistObsev::workIngWithRecvMessage(const ImmessageData &im, const 
     const ImmesgDecorOnlist::OnlistUsr_t *head = onlist.getUsrListHead();
     int n = onlist.getUsrCount();
 
-    qDebug()<<" n = "<<n;
     for (int i = 0; i < n; ++i){
-        head += i;
         panelPtr->imMesgPutUsr2UsrListPanel(ntohl(head->uid), head->name, ntohl(head->avicon));
+        ++head;
     }
-    if (onlist.isHadMore()){
-        panelPtr->getUsrOnLinelist();
-    }
+
 }

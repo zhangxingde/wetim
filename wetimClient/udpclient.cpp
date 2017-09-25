@@ -6,7 +6,7 @@
 UdpClient::UdpClient(ImmesageChannel *mesgChannelPtr)
 {
     mMesgChannelPtr = mesgChannelPtr;
-    udpsock.bind(QAbstractSocket::DefaultForPlatform);
+    udpsock.bind(0,QAbstractSocket::DontShareAddress);
     connect(&udpsock, SIGNAL(readyRead()), mesgChannelPtr, SLOT(udpDataRecv()),Qt::DirectConnection);
 }
 

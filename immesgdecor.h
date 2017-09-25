@@ -78,9 +78,9 @@ public:
     bool addOneUsr (int uid, const char *name, int avicon);
     const OnlistUsr_t* getUsrListHead () const {return onlistUsrPtr;}
     int getUsrCount() const {return ntohl(onlistCountPtr->n);}
-    void setUsrCount (int n) {onlistCountPtr->n = htonl(n);}//仅仅用于客服端的再次请求数据
-    void setHadMore (bool b);
-    bool isHadMore () const {return ntohl(onlistCountPtr->hadMore);}
+    //void setUsrCount (int n) {onlistCountPtr->n = htonl(n);}//仅仅用于客服端的再次请求数据
+    //void setHadMore (bool b);
+    //bool isHadMore () const {return ntohl(onlistCountPtr->hadMore);}
 private:
     OnlistCount_t *onlistCountPtr;
     OnlistUsr_t *onlistUsrPtr;

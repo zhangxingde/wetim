@@ -1,6 +1,7 @@
 ﻿#ifndef USRONLINESTATE_H
 #define USRONLINESTATE_H
 #include <map>
+#include <netinet/in.h>
 #include "poll/llist.h"
 
 class UsrOnlineState
@@ -10,6 +11,7 @@ public:
     typedef struct {
         ll_list_t list;
         int uid;
+        //struct sockaddr_in inAddr;
         unsigned int srcaddr;
         unsigned short srcport;
     }UsrOnState_t;
@@ -22,7 +24,7 @@ public:
     bool addUser (UsrOnState_t &u);
     void removeUser (int uid);
 
-    int getOnlineUsrInfo (UsrOnState_t *u, int maxn, int begin);
+    int getOnlineUsrInfo (UsrOnState_t *u, int maxn, ll_list_t **lastEnd);
 private:
     static UsrOnLineMap usrMap;
     static ll_list_t usrList;

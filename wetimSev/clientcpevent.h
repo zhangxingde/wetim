@@ -20,6 +20,7 @@ private:
     uint32_t  rcvMesgLen;
     uint32_t  shouldRcvLen;
     SevSqlDB *mdbptr;
+    int lastRemainTaskType;
 
     void close();
 
@@ -31,6 +32,9 @@ private:
     int replyCmdApplyNum (const ImmessageData &imsgData, ll_list_t *out);
     int replyCmdLogonAuth (const ImmessageData &imsgData, ll_list_t *out);
     int replyCmdUsrOnlist(const ImmessageData &imsgData, ll_list_t *out);
+
+    int doTheLastRemainTask (int cmdtpe, void *p, ll_list_t *out);//有任务返回1，否则返回0
+    int loopGetAllUsrList (void *p, ll_list_t *out);
 
 };
 

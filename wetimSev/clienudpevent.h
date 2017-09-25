@@ -14,15 +14,19 @@ public:
 private:
     ll_list_t inDataQueue, outDataQueue;
     SevSqlDB *mdbptr;
+    int lastRemainTaskType;
+
     int doSelfWorkByRecvData(ll_list_t *head);
     int doSelfWorkBySendData(ll_list_t *head);
 
-    int doSevByMesgType (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out);
+    int doSevByMesgType (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p);
 
-    void broadCurUsrWentOn (int uid);
+    int replyCmdKeepAlive (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p);
+    int replyCmdBroadWentOn (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p);
 
-    int replyCmdKeepAlive (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out);
-    int replyCmdBroadWentOn (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out);
+    int doTheLastRemainTask (int cmdtpe, void *p, ll_list_t *out);//有任务返回1，否则返回0
+    int loopBroadUsrWenton (void *p, ll_list_t *out);
+
 
 };
 #endif // CLIENUDPEVENT_H
