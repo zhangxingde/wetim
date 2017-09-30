@@ -94,6 +94,7 @@ int ClientUdpImmesgEvent::doSelfWorkBySendData(ll_list_t *head)
         return 0;
     }
     retnum = doSevByMesgType(srcaddr, messageData, head, &lastRemainTaskArgPtr);
+    STD_DEBUG("udp out ret = %d, cmd = %d", retnum, messageData.getMesgType());
     return retnum;
 }
 
@@ -104,6 +105,8 @@ int ClientUdpImmesgEvent::doSevByMesgType(struct sockaddr_in &srcaddr, const Imm
             return replyCmdKeepAlive(srcaddr, imsgData, out, p);
         case IMMESG_USER_BROAD:
             return replyCmdBroadWentOn(srcaddr, imsgData, out, p);
+        case IMMESG_NETGET_UDPADDR:
+            return replyCmdGetFrdUdpAddr(srcaddr, imsgData, out, p);
 
     }
     return 0;
@@ -111,19 +114,29 @@ int ClientUdpImmesgEvent::doSevByMesgType(struct sockaddr_in &srcaddr, const Imm
 
 int ClientUdpImmesgEvent::replyCmdKeepAlive(sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p)
 {
+    ImmesgDecorUdpKeep oldudp(&imsgData);
     ImmessageData m(IMMESG_UDP_KEEPALIVE);
+    ImmesgDecorUdpKeep nudp(&m);
     memBbuff_t *b = 0;
     udpDataIterm_t dstUdpData;
 
-    m.setDstSrcUsr(imsgData.getSrcUsrId(),0);
+    if (oldudp.getIpAddr() != srcaddr.sin_addr.s_addr ||
+            oldudp.getPort() != srcaddr.sin_port){
+        UsrOnlineState onState;
+
+        onState.setUserRemAddr(oldudp.getSrcUsrId(), srcaddr.sin_addr.s_addr, srcaddr.sin_port);
+    }
+    nudp.setDstSrcUsr(imsgData.getSrcUsrId(),0);
+    nudp.setUdpAdddr(srcaddr.sin_addr.s_addr, srcaddr.sin_port);
+
     dstUdpData.addrLen = sizeof(struct sockaddr_in);
     dstUdpData.inAddr = srcaddr;
-    dstUdpData.dataLen = m.length();
+    dstUdpData.dataLen = nudp.length();
     b = mempollPtr->getMembuf();
     if (!b)
         return 0;
     mempollPtr->memDataCopy(b, &dstUdpData, getUdpDataItermHeadLen());
-    mempollPtr->memDataCopy(b, m.getDataPtr(), m.length());
+    mempollPtr->memDataCopy(b, nudp.getDataPtr(), nudp.length());
     LLIST_ADD_TAIL(out, &b->list);
     return 1;
 }
@@ -144,6 +157,44 @@ int ClientUdpImmesgEvent::replyCmdBroadWentOn(sockaddr_in &srcaddr, const Immess
     onState.addUser(onbuf[0]);
     *p = &wentOnUsrId;
     return r;
+}
+
+static void setUdpDataItermByUsrOnstate (udpSockHandle_c::udpDataIterm_t *udpItermPtr, const UsrOnlineState::UsrOnState_t *u)
+{
+    if (!udpItermPtr || !u)
+        return;
+    udpItermPtr->addrLen =sizeof(struct sockaddr_in);
+    udpItermPtr->inAddr.sin_family = AF_INET;
+    udpItermPtr->inAddr.sin_addr.s_addr = u->srcaddr;
+    udpItermPtr->inAddr.sin_port = u->srcport;
+}
+
+int ClientUdpImmesgEvent::replyCmdGetFrdUdpAddr(sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p)
+{
+    udpDataIterm_t dstUdpData;
+    ImmesgDecorNetwkUdpAddr inMesg(&imsgData);
+    const UsrOnlineState::UsrOnState_t *u = 0;
+    UsrOnlineState onState;
+    memBbuff_t *b = 0;
+
+    ImmessageData outData(imsgData);
+    ImmesgDecorNetwkUdpAddr outUdp(&outData);
+
+    if (1){
+        u = onState.getUserOnstateByUid(inMesg.getDstUsrId());
+        if (u){
+            setUdpDataItermByUsrOnstate(&dstUdpData, u);
+            outUdp.setSrcUsrRemUdpAddr(ntohl(srcaddr.sin_addr.s_addr), ntohs(srcaddr.sin_port));
+            b = mempollPtr->getMembuf();
+            mempollPtr->memDataCopy(b, &dstUdpData, getUdpDataItermHeadLen());
+            mempollPtr->memDataCopy(b, outUdp.getDataPtr(), outUdp.length());
+        }
+    }
+    if (b){
+        LLIST_ADD_TAIL(out, &b->list);
+    }
+    STD_DEBUG("udp addr ,b = %p",b);
+    return b?1:0;
 }
 
 int ClientUdpImmesgEvent::doTheLastRemainTask(int cmdtpe, void *p, ll_list_t *out)

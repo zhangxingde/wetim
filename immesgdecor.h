@@ -88,6 +88,73 @@ private:
     void addCount ();
 };
 
+class ImmesgDecorUdpKeep : public ImmessageMan
+{
+public:
+    #pragma pack(1)
+    typedef struct {
+        unsigned int oldIpv4;
+        unsigned short oldPort;
+    }RemUdpAddr_t;
+    #pragma pack()
+
+    ImmesgDecorUdpKeep (ImmessageMan *m);
+    ImmesgDecorUdpKeep (const ImmessageMan *m);
+
+    void setUdpAdddr (unsigned int ip, unsigned short port)
+    {
+        addMesgData(sizeof(RemUdpAddr_t));
+        udpaddrPtr->oldIpv4 = ip;
+        udpaddrPtr->oldPort = port;
+    }
+
+    unsigned int getIpAddr () {return udpaddrPtr->oldIpv4;}
+    unsigned short getPort () {return udpaddrPtr->oldPort;}
+
+private:
+    RemUdpAddr_t *udpaddrPtr;
+};
+
+
+
+class ImmesgDecorNetwkUdpAddr : public ImmessageMan
+{
+public:
+    #pragma pack(1)
+    typedef struct {
+        unsigned int ipv4;
+        unsigned short port;
+    }UdpAddr_t;
+
+    typedef struct {
+        UdpAddr_t rem;
+        UdpAddr_t loc;
+    }RemLocAddr_t;
+    #pragma pack()
+    ImmesgDecorNetwkUdpAddr (ImmessageMan *m);
+    ImmesgDecorNetwkUdpAddr (const ImmessageMan *m);
+
+    void setSrcUsrRemUdpAddr (unsigned int ipv4, unsigned short port);
+    void setSrcUsrLocUdpAddr (unsigned int ipv4, unsigned short port);
+    UdpAddr_t getSrcUsrRemUdpAddr ()
+    {
+        UdpAddr_t rem = {ntohl(remLocAddrPtr->rem.ipv4), ntohs(remLocAddrPtr->rem.port)};
+        return rem;
+    }
+    UdpAddr_t getSrcUsrLocUdpAddr ()
+    {
+        UdpAddr_t loc = {ntohl(remLocAddrPtr->loc.ipv4), ntohs(remLocAddrPtr->loc.port)};
+        return loc;
+    }
+
+    void setAck (bool a);
+    bool isAck () const;
+private:
+    RemLocAddr_t *remLocAddrPtr;
+
+};
+
+
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////

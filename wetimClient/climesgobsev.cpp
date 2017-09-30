@@ -41,3 +41,19 @@ void ImesgUsrOnlistObsev::workIngWithRecvMessage(const ImmessageData &im, const 
     }
 
 }
+
+void ImesgNetGetUdpAddr::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
+{
+    MainPanel *panelPtr = (MainPanel*)p;
+
+    panelPtr->imMesgGetUdpAddr(im);
+}
+
+
+void ImesgP2pUdp::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
+{
+    MainPanel *panelPtr = (MainPanel*)p;
+
+    qDebug()<<"p2p recv from "<<addr<<":"<<port;
+    panelPtr->imMesgP2pUdp(im);
+}

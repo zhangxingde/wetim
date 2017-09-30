@@ -66,6 +66,13 @@ ImmessageData::ImmessageData():ImmessageMan(this)
     curMesgDataPtr = mesg.head.mesgData;
 }
 
+ImmessageData::ImmessageData(const ImmessageData &other): ImmessageMan(this)
+{
+    mLength = other.mLength;
+    mesg = other.mesg;
+    curMesgDataPtr = mesg.head.mesgData + (other.curMesgDataPtr - other.mesg.head.mesgData);
+}
+
 void ImmessageData::setDstSrcUsr(int dst, int src)
 {
     mesg.head.dstUsr = htonl(dst);

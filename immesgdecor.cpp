@@ -108,6 +108,53 @@ void ImmesgDecorOnlist::addCount()
     onlistCountPtr->n = htonl(getUsrCount() + 1);
 }
 
+
+
+ImmesgDecorUdpKeep::ImmesgDecorUdpKeep(const ImmessageMan *m):ImmessageMan(m)
+{
+    udpaddrPtr = (RemUdpAddr_t*)getMesgDataPtr();
+}
+
+ImmesgDecorUdpKeep::ImmesgDecorUdpKeep(ImmessageMan *m):ImmessageMan(m)
+{
+    udpaddrPtr = (RemUdpAddr_t*)getMesgDataPtr();
+}
+
+
+
+ImmesgDecorNetwkUdpAddr::ImmesgDecorNetwkUdpAddr(ImmessageMan *m):ImmessageMan(m)
+{
+    remLocAddrPtr = (RemLocAddr_t*)getMesgDataPtr();
+    addMesgData(sizeof(RemLocAddr_t) + 1);
+}
+
+ImmesgDecorNetwkUdpAddr::ImmesgDecorNetwkUdpAddr(const ImmessageMan *m):ImmessageMan(m)
+{
+    remLocAddrPtr = (RemLocAddr_t*)getMesgDataPtr();
+}
+
+void ImmesgDecorNetwkUdpAddr::setSrcUsrRemUdpAddr(unsigned int ipv4, unsigned short port)
+{
+    remLocAddrPtr->rem.ipv4 = htonl(ipv4);
+    remLocAddrPtr->rem.port = htons(port);
+}
+
+void ImmesgDecorNetwkUdpAddr::setSrcUsrLocUdpAddr(unsigned int ipv4, unsigned short port)
+{
+    remLocAddrPtr->loc.ipv4 = htonl(ipv4);
+    remLocAddrPtr->loc.port = htons(port);
+}
+
+void ImmesgDecorNetwkUdpAddr::setAck(bool a)
+{
+    *((char*)(remLocAddrPtr +1)) = a;
+}
+
+bool ImmesgDecorNetwkUdpAddr::isAck() const
+{
+    return *((char*)(remLocAddrPtr +1));
+}
+
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////

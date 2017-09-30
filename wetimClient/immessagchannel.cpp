@@ -2,14 +2,23 @@
 #include "tcpconnect.h"
 #include "immessage_def.h"
 #include "udpclient.h"
+#include "clientsqldb.h"
 
 
 ImmesageChannel::ImmesageChannel()
 {
+    ClientSqlDb *clientSqlDbPtr;
+
     isQuit = 0;
     udpClientPtr = new UdpClient(this);
     memset(imObsevers, 0 ,sizeof(imObsevers));
     memset(imObsevArg, 0, sizeof(imObsevArg));
+    clientSqlDbPtr = ClientSqlDb::getInstance();
+
+    setDstSevInaddrInfo(clientSqlDbPtr->queryLogonSevAddr(),clientSqlDbPtr->queryLogonSevTcport(),
+                        clientSqlDbPtr->queryLogonSevUdport());
+    clientSqlDbPtr->close();
+
     start();
 }
 
@@ -23,7 +32,7 @@ ImmesageChannel::~ImmesageChannel()
     for (unsigned int i = 0; i < sizeof(imObsevers)/sizeof(imObsevers[0]); ++i){
         if (imObsevers[i])
             delete imObsevers[i];
-    }
+    }    
 }
 
 unsigned int ImmesageChannel::sendTcpData2Server(const QString &addr, unsigned int tport, const ImmessageData &data)
@@ -36,11 +45,12 @@ unsigned int ImmesageChannel::sendTcpData2Server(const QString &addr, unsigned i
         int peerPort;
         bool b;
 
+        peerIpv4Addr = mtcpsockptr->getLocalAddr();
         len = mtcpsockptr->sendData(data.getDataPtr(), data.length());
         b = len > 0 && mtcpsockptr->recvData(remData, peerAddr, peerPort);
         mtcpsockptr->close();
         if (b){
-            ImmessageData m;qDebug()<<"tcp recv len = "<<remData.length();
+            ImmessageData m;
 
             m.recvRawData(remData.constData(), remData.length());
             pushTcpDataIn(m, peerAddr, peerPort);
@@ -63,6 +73,9 @@ bool ImmesageChannel::pushTcpDataIn(const ImmessageData &data, const QString &ad
 
 bool ImmesageChannel::pushUdpDataOut(const ImmessageData &data, const QString &addr, int port)
 {
+    if (port < 0 || !addr.length()){
+        return messageQueuePtr->pushMesg(data, dstSevIpv4, dstUdpPort,1, 0);
+    }
     return messageQueuePtr->pushMesg(data, addr, port,1, 0);
 }
 
@@ -94,6 +107,16 @@ bool ImmesageChannel::regOneImobsever(ImmesgObsev *obsever, void *p)
     return 1;
 }
 
+unsigned int ImmesageChannel::getLocalUdpIpv4()
+{
+    return peerIpv4Addr;
+}
+
+unsigned short ImmesageChannel::getLocalUdpProt()
+{
+    return udpClientPtr->getLOcalPort();
+}
+
 bool ImmesageChannel::publishAnImmessage(ImmessageData &src, QString &addr, int port)
 {
     int t;
@@ -106,6 +129,15 @@ bool ImmesageChannel::publishAnImmessage(ImmessageData &src, QString &addr, int 
         imObsevers[t]->workIngWithRecvMessage(src, addr.toStdString().c_str(), port,imObsevArg[t]);
     }
     return 1;
+}
+
+void ImmesageChannel::setDstSevInaddrInfo(const char *ipv4, unsigned short tport, unsigned short uport)
+{
+    if (ipv4){
+        strncpy(dstSevIpv4, ipv4, sizeof(dstSevIpv4));
+    }
+    dstTcpPort = tport;
+    dstUdpPort = uport;
 }
 
 void ImmesageChannel::run()

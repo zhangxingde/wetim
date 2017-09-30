@@ -75,6 +75,11 @@ uint32_t TcpClient::getLocalAddr()
     return a;
 }
 
+uint32_t TcpClient::getPeerAddr()
+{
+    return sockptr->peerAddress().toIPv4Address();
+}
+
 uint16_t TcpClient::getLocalPort()
 {
     return sockptr->localPort();

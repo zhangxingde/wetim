@@ -18,6 +18,20 @@ bool UsrOnlineState::addUser(UsrOnState_t &u)
     return ret.second;
 }
 
+bool UsrOnlineState::setUserRemAddr(int uid, unsigned ip, unsigned short port)
+{
+    UsrOnLineMap::iterator it = usrMap.find(uid);
+
+    if (it != usrMap.end()){
+        UsrOnState_t *u = &it->second;
+
+        u->srcaddr = ip;
+        u->srcport = port;
+        return 1;
+    }
+    return 0;
+}
+
 void UsrOnlineState::removeUser(int uid)
 {
     UsrOnLineMap::iterator it = usrMap.find(uid);

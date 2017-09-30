@@ -21,7 +21,9 @@ typedef enum {
 
     IMMESG_UDP_KEEPALIVE,
 
-    IMMESG_DATA_P2PUDP,
+    IMMESG_NETGET_UDPADDR,
+    IMMESG_NETP2P_UDPDATA,
+
     IMMESG_DATA_ACK,
     IMMESG_NET_CONNECT,
     __IMMESG_MAX_NUM
@@ -74,6 +76,7 @@ class ImmessageData : public ImmessageMan
 public:
     ImmessageData(Imesgtpe_t t);
     ImmessageData ();
+    ImmessageData (const ImmessageData &other);
     void setDstSrcUsr(int dst, int src);
     int getDstUsrId () const;
     int getSrcUsrId () const;

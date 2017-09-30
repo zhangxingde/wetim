@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    int r = 0;
+    int r = -1;
 #if 1
     LogonUi *logon = new LogonUi;
     logon->show();
@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     MainPanel *panelPtr = new MainPanel(logon->getMineUsrId());
     delete logon;
     panelPtr->show();
+    panelPtr->startServer();
     r = a.exec();
     delete panelPtr;
     return r;

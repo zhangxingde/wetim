@@ -23,6 +23,7 @@ private:
 
     int replyCmdKeepAlive (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p);
     int replyCmdBroadWentOn (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p);
+    int replyCmdGetFrdUdpAddr (struct sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p);
 
     int doTheLastRemainTask (int cmdtpe, void *p, ll_list_t *out);//有任务返回1，否则返回0
     int loopBroadUsrWenton (void *p, ll_list_t *out);

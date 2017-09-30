@@ -4,14 +4,22 @@
 #include <QWidget>
 #include <QMainWindow>
 
-class UsrBaseInfoWidget;
+#include "clockthreadman.h"
+
 class QComboBox;
 class QTabWidget;
+class QTextBrowser;
+
+class UsrBaseInfoWidget;
 class UsrFriendListWidget;
 class ImmesageChannel;
 class ClientSqlDb;
 class ImmessageData;
-class QTextBrowser;
+class FriendSetSingleMan;
+class ChatBrowserWgtMan;
+class ClockThreadMan;
+
+#include "p2pudpchannel.h"
 
 class MainPanel : public QMainWindow
 {
@@ -20,14 +28,19 @@ class MainPanel : public QMainWindow
 public:
     explicit MainPanel(int uid, QWidget *parent = 0);
     ~MainPanel();
+    void startServer ();
 
     void imMesgRecvKeepAlive(const ImmessageData &m);
     void imMesgPutUsr2UsrListPanel (int uid, const char *name, int avicon);
+    void imMesgGetUdpAddr (const ImmessageData &m);
+    void imMesgP2pUdp (const ImmessageData &m);
+
+    int openChatBrowserByUid (int uid);
+    void closeChatBrowserByUid (int uid);
 public slots:
     void getUsrOnLinelist ();
 
 private slots:
-    void imMesgUdpKeepAliveTimerSlot ();
 
 private:
     int const mineUsrId;
@@ -41,9 +54,22 @@ private:
 
     ImmesageChannel *mesgChannelPtr;
     ClientSqlDb *clientSqlDbPtr;
+    FriendSetSingleMan *frdsSetManPtr;
+    ChatBrowserWgtMan *chatBrowserWgtManPtr;
+
+    ClockThreadMan *clockThreadManPtr;
+    ClockThreadMan::clocker_list udpKeepTimer;
+
+    P2PUdpChannel p2pudpChan;
 
     int curFriendNum;
 
+    unsigned int remUdpIpv4Addr;
+    unsigned int remUdpPort;
+
+    static void clockTaskUdpKeepAlive (void *p);
+
+    void imMesgUdpKeepAliveTimer ();
 
     int getMaxWidth () {return maxWidth;}
     void setUsrBaseInfoWidget();
@@ -51,6 +77,7 @@ private:
     void setUsrTabWidget();
 
     void imMesgSendWentOnMessage ();
+    void sendLocalUdpAddr2Usr (int dstUid, int isInit = 1);
 
 
 };

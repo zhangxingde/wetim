@@ -21,6 +21,7 @@ public:
     bool recvData (QByteArray &data, QString &peerAddr, int &peerPort);
     uint32_t getLocalAddr ();
     uint16_t getLocalPort ();
+    uint32_t getPeerAddr ();
     int getErrorNo () {return sockptr->error();}
     QString getErrorString() {return sockptr->errorString();}
 

@@ -44,7 +44,12 @@ SOURCES += \
     mainpanel.cpp \
     usrbaseinfowidget.cpp \
     usrfriendlistwidget.cpp \
-    udpclient.cpp
+    udpclient.cpp \
+    usrchatborwerwidget.cpp \
+    friendsetsingleman.cpp \
+    p2pudpchannel.cpp \
+    chatbrowserwgtman.cpp \
+    clockthreadman.cpp
 
 HEADERS += \
     ../sql/sqlite3/sqlite3.h \
@@ -66,7 +71,12 @@ HEADERS += \
     mainpanel.h \
     usrbaseinfowidget.h \
     usrfriendlistwidget.h \
-    udpclient.h
+    udpclient.h \
+    usrchatborwerwidget.h \
+    friendsetsingleman.h \
+    p2pudpchannel.h \
+    chatbrowserwgtman.h \
+    clockthreadman.h
 
 SUBDIRS += \
     wetimClient.pro

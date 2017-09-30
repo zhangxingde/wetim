@@ -179,7 +179,7 @@ int ClientTcpImmesgEvent::doSelfWorkBySendData(ll_list_t *head)
         return -1;
     }
     retnum = doSevByMesgType(messageData, head);
-    STD_DEBUG("out ret = %d",retnum);
+    STD_DEBUG("tcp out ret = %d, cmd = %d",retnum, messageData.getMesgType());
     return retnum;
 }
 

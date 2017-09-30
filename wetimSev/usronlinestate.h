@@ -12,8 +12,8 @@ public:
         ll_list_t list;
         int uid;
         //struct sockaddr_in inAddr;
-        unsigned int srcaddr;
-        unsigned short srcport;
+        unsigned int srcaddr;//网络字节序
+        unsigned short srcport;//网络字节序
     }UsrOnState_t;
     #pragma pack()
 
@@ -22,7 +22,18 @@ public:
     UsrOnlineState();
 
     bool addUser (UsrOnState_t &u);
+    bool setUserRemAddr (int uid, unsigned ip, unsigned short port);
     void removeUser (int uid);
+    const UsrOnState_t* getUserOnstateByUid (int uid)
+    {
+        UsrOnState_t *u = 0;
+        UsrOnLineMap::iterator it = usrMap.find(uid);
+
+        if (it != usrMap.end()){
+            u = &it->second;
+        }
+        return u;
+    }
 
     int getOnlineUsrInfo (UsrOnState_t *u, int maxn, ll_list_t **lastEnd);
 private:
