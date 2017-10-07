@@ -31,6 +31,8 @@ public:
     bool setUsrBaseInfo (int id, const char *name, const char *pass, int avicon);
     bool queryAllUsrId (SqlQueryDataRows &row);
     bool queryUsrPasswdByUsrID (int uid, char *pass, size_t len);
+    int  queryUsrHeadIconId (int uid);
+    bool queryUsrName (int uid, char *dstptr, int dstlen);
 private:
     ClientSqlDb();
     ~ClientSqlDb();

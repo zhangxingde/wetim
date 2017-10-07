@@ -19,8 +19,6 @@ class FriendSetSingleMan;
 class ChatBrowserWgtMan;
 class ClockThreadMan;
 
-#include "p2pudpchannel.h"
-
 class MainPanel : public QMainWindow
 {
     Q_OBJECT
@@ -32,13 +30,13 @@ public:
 
     void imMesgRecvKeepAlive(const ImmessageData &m);
     void imMesgPutUsr2UsrListPanel (int uid, const char *name, int avicon);
-    void imMesgGetUdpAddr (const ImmessageData &m);
-    void imMesgP2pUdp (const ImmessageData &m);
 
-    int openChatBrowserByUid (int uid);
-    void closeChatBrowserByUid (int uid);
+    int openChatBrowserByUid (int uid, bool isHasMessage = 0);
+
+    void noticeMessagComeing (int uid);
 public slots:
     void getUsrOnLinelist ();
+    void closeChatBrowserByUid (int uid);
 
 private slots:
 
@@ -60,7 +58,7 @@ private:
     ClockThreadMan *clockThreadManPtr;
     ClockThreadMan::clocker_list udpKeepTimer;
 
-    P2PUdpChannel p2pudpChan;
+    //P2PUdpChannel p2pudpChan;
 
     int curFriendNum;
 
@@ -77,7 +75,6 @@ private:
     void setUsrTabWidget();
 
     void imMesgSendWentOnMessage ();
-    void sendLocalUdpAddr2Usr (int dstUid, int isInit = 1);
 
 
 };

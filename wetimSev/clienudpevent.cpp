@@ -105,7 +105,7 @@ int ClientUdpImmesgEvent::doSevByMesgType(struct sockaddr_in &srcaddr, const Imm
             return replyCmdKeepAlive(srcaddr, imsgData, out, p);
         case IMMESG_USER_BROAD:
             return replyCmdBroadWentOn(srcaddr, imsgData, out, p);
-        case IMMESG_NETGET_UDPADDR:
+        case IMMESG_NETP2P_UDPDATA:
             return replyCmdGetFrdUdpAddr(srcaddr, imsgData, out, p);
 
     }
@@ -172,13 +172,13 @@ static void setUdpDataItermByUsrOnstate (udpSockHandle_c::udpDataIterm_t *udpIte
 int ClientUdpImmesgEvent::replyCmdGetFrdUdpAddr(sockaddr_in &srcaddr, const ImmessageData &imsgData, ll_list_t *out, void **p)
 {
     udpDataIterm_t dstUdpData;
-    ImmesgDecorNetwkUdpAddr inMesg(&imsgData);
+    ImmesgDecorP2PUdpData inMesg(&imsgData);
     const UsrOnlineState::UsrOnState_t *u = 0;
     UsrOnlineState onState;
     memBbuff_t *b = 0;
 
     ImmessageData outData(imsgData);
-    ImmesgDecorNetwkUdpAddr outUdp(&outData);
+    ImmesgDecorP2PUdpData outUdp(&outData);
 
     if (1){
         u = onState.getUserOnstateByUid(inMesg.getDstUsrId());

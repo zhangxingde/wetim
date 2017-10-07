@@ -5,7 +5,7 @@
 
 class UsrChatBrowserWidget;
 
-class FriendSetSingleMan : public SingletonTempBase<FriendSetSingleMan>
+class FriendSetSingleMan: public SingletonTempBase<FriendSetSingleMan>
 {
 public:
     friend class SingletonTempBase<FriendSetSingleMan>;
@@ -16,22 +16,33 @@ public:
     }FrdBaseInfo_t;
 
     typedef struct {
-        int chatBorwerWindowNum;
-    }FrdState_t;
-
-    typedef struct {
         FrdBaseInfo_t baseinfo;
-        FrdState_t state;
+        void *p;
     }FrdDetaiInfo_t;
 
     bool instOneFriend2Map (int uid, const char *name, int avicon);
     void removeOneFriend (int uid);
-    bool setChatBrowserWindwNum (int uid, int winNum);
     int findChatBrowserWindwNumByUid (int uid);
     const FrdBaseInfo_t* findFriendBaseInfo (int uid)
     {
         FrdDetaiInfo_t *f = findFriendDetaiInfoByUid(uid);
         return f? &f->baseinfo:0;
+    }
+    bool setFriendVoidPtr (int uid, void *p)
+    {
+        FrdDetaiInfo_t *f = findFriendDetaiInfoByUid(uid);
+
+        if (f){
+            f->p = p;
+            return 1;
+        }
+        return 0;
+    }
+
+    void* findFriendVoidPtr (int uid)
+    {
+        FrdDetaiInfo_t *f = findFriendDetaiInfoByUid(uid);
+        return f? f->p:0;
     }
 
     void setMineUid (int uid) {mineBaseinfo.uid = uid;}

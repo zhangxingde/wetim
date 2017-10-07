@@ -18,6 +18,7 @@ TEMPLATE = app
 QMAKE_CXXFLAGS +=
 DEFINES += QT_DEPRECATED_WARNINGS USE_SQLITE3 SQLITE_THREADSAFE SYS_CLIENT
 INCLUDEPATH += ..
+unix:LIBS += "-ldl"
 #win32:INCLUDEPATH += E:\linuxcc\mysql-5.7.19-win32\include
 #win32:LIBS += E:\linuxcc\mysql-5.7.19-win32\lib\mysqlclient.lib
 # You can also make your code fail to compile if you use deprecated APIs.
@@ -49,7 +50,8 @@ SOURCES += \
     friendsetsingleman.cpp \
     p2pudpchannel.cpp \
     chatbrowserwgtman.cpp \
-    clockthreadman.cpp
+    clockthreadman.cpp \
+    ../usrheadicondb.cpp
 
 HEADERS += \
     ../sql/sqlite3/sqlite3.h \
@@ -76,7 +78,8 @@ HEADERS += \
     friendsetsingleman.h \
     p2pudpchannel.h \
     chatbrowserwgtman.h \
-    clockthreadman.h
+    clockthreadman.h \
+    ../usrheadicondb.h
 
 SUBDIRS += \
     wetimClient.pro

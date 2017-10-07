@@ -85,7 +85,7 @@ template<typename T>
 void SingletonTempBase<T>::umutexLock()
 {
 #if defined _REENTRANT
-    pthread_mutex_ulock(&mLock);
+    pthread_mutex_unlock(&mLock);
 #elif defined(QT_CORE_LIB)
     mLock.unlock();
 #endif

@@ -5,7 +5,7 @@ ClockThreadMan::ClockThreadMan()
 {
     isQuit = 0;
     LLIST_INIT(&clockQueue);
-    start();
+    start(QThread::HighestPriority);
 }
 
 ClockThreadMan::~ClockThreadMan()
@@ -17,10 +17,16 @@ ClockThreadMan::~ClockThreadMan()
     wait();
 }
 
-int ClockThreadMan::addClocker(clocker_list *c)
+int ClockThreadMan::addClocker(clocker_list *c, long expires, bool immedly)
 {
     if (!LLIST_EMPTY(&c->list))
         return 0;
+    if (expires <= 0)
+        return 0;
+    if (immedly && c->fun){
+        c->fun(c->usrArg);
+    }
+    c->expires = expires;
     c->remainexps = c->expires;
     mLock.lock();
     LLIST_ADD_TAIL(&clockQueue, &c->list);
@@ -28,19 +34,19 @@ int ClockThreadMan::addClocker(clocker_list *c)
     return 1;
 }
 
-int ClockThreadMan::modClocker(clocker_list *c, unsigned long expires)
+int ClockThreadMan::modClocker(clocker_list *c, long expires)
 {
     delCloker(c);
     c->expires = expires;
-    return addClocker(c);
+    return addClocker(c, expires);
 }
 
 void ClockThreadMan::delCloker(clocker_list *c)
 {
+    if (LLIST_EMPTY(&c->list))
+        return;
     mLock.lock();
-    if (!LLIST_EMPTY(&c->list)){
-        LLIST_DEL(&c->list);
-    }
+    LLIST_DEL(&c->list);
     mLock.unlock();
     LLIST_INIT(&c->list);
 }
@@ -62,11 +68,9 @@ void ClockThreadMan::run()
         l = clockQueue.next;
         while (l != &clockQueue){
             c = MEMBER_ENTRY(l, clocker_list, list);
-            if ((c->remainexps - diff - 1) <= 0){
+            if ((c->remainexps -= diff + 1) <= 0){
                 c->fun(c->usrArg);
                 c->remainexps = c->expires;
-            }else{
-                c->remainexps -= diff + 1;
             }
             l = l->next;
         }

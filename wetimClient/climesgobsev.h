@@ -32,18 +32,18 @@ private:
     void workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p);
 };
 
-class ImesgNetGetUdpAddr : public ImmesgObsev
-{
-public:
-    ImesgNetGetUdpAddr():ImmesgObsev(IMMESG_NETGET_UDPADDR){}
-private:
-    void workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p);
-};
-
 class ImesgP2pUdp : public ImmesgObsev
 {
 public:
     ImesgP2pUdp():ImmesgObsev(IMMESG_NETP2P_UDPDATA){}
+private:
+    void workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p);
+};
+
+class ImesgChatMessage : public ImmesgObsev
+{
+public:
+    ImesgChatMessage():ImmesgObsev(IMMESG_NETDATA_IMCHAT){}
 private:
     void workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p);
 };

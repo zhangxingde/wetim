@@ -1,4 +1,5 @@
-﻿#include "friendsetsingleman.h"
+﻿#include <string.h>
+#include "friendsetsingleman.h"
 
 FriendSetSingleMan::FriendSetSingleMan()
 {
@@ -20,8 +21,6 @@ bool FriendSetSingleMan::instOneFriend2Map(int uid, const char *name, int avicon
     strncpy(frd.baseinfo.name, name, sizeof(frd.baseinfo.name));
     frd.baseinfo.avicon = avicon;
 
-    frd.state.chatBorwerWindowNum = -1;
-
     ret = frdsMap.insert(std::pair<int, FrdDetaiInfo_t>(uid, frd));
     return ret.second;
 }
@@ -29,27 +28,6 @@ bool FriendSetSingleMan::instOneFriend2Map(int uid, const char *name, int avicon
 void FriendSetSingleMan::removeOneFriend(int uid)
 {
     eraseOneFriendFromMap(uid);
-}
-
-bool FriendSetSingleMan::setChatBrowserWindwNum(int uid, int winNum)
-{
-    FrdDetaiInfo_t *f = findFriendDetaiInfoByUid(uid);
-
-    if (f){
-        f->state.chatBorwerWindowNum = winNum;
-        return 1;
-    }
-    return 1;
-}
-
-int FriendSetSingleMan::findChatBrowserWindwNumByUid(int uid)
-{
-    FrdDetaiInfo_t *f = findFriendDetaiInfoByUid(uid);
-
-    if (f){
-        return f->state.chatBorwerWindowNum;
-    }
-    return -1;
 }
 
 void FriendSetSingleMan::eraseOneFriendFromMap(int uid)

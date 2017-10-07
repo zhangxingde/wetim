@@ -20,6 +20,9 @@
 #define ATOMIC_AND_GET(ptr,v) (ptr)->operator&=(v)
 #define ATOMIC_XOR_GET(ptr,v) (ptr)->operator^=(v)
 
+#define ATOMIC_BOOL_CMP_SWAP(ptr,oldval,newval) (ptr)->testAndSetRelaxed(oldval,newval)
+//#define ATOMIC_VAL_CMP_SWAP(ptr,oldval,newval)
+
 #define ATOMIC_GET_SET(ptr,v) (ptr)->fetchAndStoreRelaxed(v) /*将*ptr设为value并返回*ptr操作之前的值。*/
 #define ATOMIC_RELEASE(ptr)   (ptr)->store(0)         /*将*ptr置0*/
 

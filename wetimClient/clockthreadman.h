@@ -14,23 +14,24 @@ class ClockThreadMan : public SingletonTempBase <ClockThreadMan>, public QThread
 public:
     typedef struct {
         ll_list_t list;
-        unsigned long expires;
-        unsigned long remainexps;
+        long expires;
+        long remainexps;
         void (*fun) (void *usrArg);
         void *usrArg;
     }clocker_list;
 
-    static void ClockerInit (clocker_list *c, unsigned long expires, void (*fun) (void *usrArg), void *p)
+    static void ClockerInit (clocker_list *c, void (*fun) (void *usrArg), void *p)
     {
         memset(c, 0, sizeof(clocker_list));
         LLIST_INIT(&c->list);
-        c->expires = expires;
+        c->expires = 0;
+        c->remainexps = 0;
         c->fun = fun;
         c->usrArg = p;
     }
 
-    int addClocker (clocker_list *c);
-    int modClocker (clocker_list *c, unsigned long expires);
+    int addClocker (clocker_list *c, long expires, bool immedly = 0);
+    int modClocker (clocker_list *c, long expires);
     void delCloker (clocker_list *c);
 private:
     ClockThreadMan();

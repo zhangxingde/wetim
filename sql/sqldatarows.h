@@ -103,15 +103,17 @@ class SqlQueryDataRows {
                                     strcpy(v.s + orgStrOffset, s);
                                 }
 			}
+            int getLength () const {return len;}
 			char getChar () const{return v.ch;}
 			int  getInt () const {return v.i32;} 
 			long long int getLLint () const {return v.i64;} 
 			float getFloat () const {return v.f;} 
 			double getDouble () const {return v.d;}
 			const char* getString () const {return v.s;}
-			int  getBlobData (void *p) const{
-				memcpy(p, v.s, len);
-				return len;
+            int  getBlobData (void *p, int maxlen) const{
+                int cplen = len > maxlen ? maxlen : len;
+                memcpy(p, v.s, cplen);
+                return cplen;
 			} 
                         const char* getOrgString () const {return v.s + orgStrOffset;}
 

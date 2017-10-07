@@ -9,7 +9,7 @@ Sqlite3Man::Sqlite3Man(const char *dbFilePath)
 }
 Sqlite3Man::~Sqlite3Man()
 {
-
+    closeSQlite3();
 }
 
 bool Sqlite3Man::open()
@@ -20,6 +20,14 @@ bool Sqlite3Man::open()
         setErrno(sqlite3_errcode(sqlite3Ptr));
     }
     return sqlite3Ptr ? 1:0;
+}
+
+void Sqlite3Man::closeSQlite3()
+{
+    if (sqlite3Ptr){
+        sqlite3_close(sqlite3Ptr);
+        sqlite3Ptr = 0;
+    }
 }
 
 bool Sqlite3Man::runQuery(const std::string &cmd)

@@ -46,6 +46,7 @@ LogonUi::LogonUi():QDialog(0, Qt::Window),
     imChannelPtr->regOneImobsever(new ImesgLononObsev, this);
     connect(imChannelPtr, SIGNAL(sockerror(int, const QString&)), this, SLOT(dispNetworkErrorInfo(int, const QString&)));
     connect(this, SIGNAL(logonAuthStateSig(int)), this, SLOT(logonAuthStateSlot(int)));
+    oldSevAddr[0] = 0;
 }
 
 LogonUi::~LogonUi()
@@ -215,11 +216,15 @@ void LogonUi::dispSeting()
 
 void LogonUi::getLogonSevSeting()
 {
+    bool b;
     dispSeting();
 
-    dbptr->setLogonSevSeting(setServerAddrLinePtr->text().toStdString().c_str(),
+    b = dbptr->setLogonSevSeting(setServerAddrLinePtr->text().toStdString().c_str(),
                                  setServerTportLinePtr->text().toUInt(),
                                  setServerUportLinePtr->text().toUInt(), oldSevAddr);
+    if (!b){
+        dispNetworkErrorInfo(0, QStringLiteral("设置登陆服务器信息失败:") + QString(dbptr->getErrorStr()));
+    }
 }
 
 void LogonUi::setDisplayLogonSevInfo(const char *sev, int tport, int uport)
@@ -244,7 +249,7 @@ void LogonUi::applyNumFromServer()
         //imChannelPtr->sendTcpData2Server(oldSevAddr, tport, m);
         imChannelPtr->pushTcpDataOut(m, addr, tport);
     }else{
-        dispNetworkErrorInfo(0, QStringLiteral("查询登陆服务器信息失败"));
+        dispNetworkErrorInfo(0, QStringLiteral("查询登陆服务器信息失败") + QString(dbptr->getErrorStr()));
     }
 
 }

@@ -21,8 +21,8 @@ typedef enum {
 
     IMMESG_UDP_KEEPALIVE,
 
-    IMMESG_NETGET_UDPADDR,
     IMMESG_NETP2P_UDPDATA,
+    IMMESG_NETDATA_IMCHAT,
 
     IMMESG_DATA_ACK,
     IMMESG_NET_CONNECT,
@@ -98,8 +98,18 @@ private:
     char *curMesgDataPtr;
 
 };
-
-
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+class ImmesgObsev {
+public:
+    ImmesgObsev (Imesgtpe_t t){imtype = t;}
+    virtual ~ImmesgObsev() {}
+    int getMesgType () {return imtype;}
+    virtual void workIngWithRecvMessage (const ImmessageData &im, const char *addr, int port, void *p) = 0;
+private:
+    Imesgtpe_t imtype;
+};
 #if 0
 class imMessageMan_c {
 public:

@@ -19,10 +19,8 @@
 #include <QDebug>
 
 MainPanel::MainPanel(int uid, QWidget *parent) :
-    QMainWindow(parent),mineUsrId(uid),maxWidth(450),p2pudpChan(this)
+    QMainWindow(parent),mineUsrId(uid),maxWidth(450)
 {
-    qRegisterMetaType<P2PUdpChannel::netAdddr_t>("P2PUdpChannel::netAdddr_t");
-
     mesgChannelPtr = ImmesageChannel::getInstance();
     clientSqlDbPtr = ClientSqlDb::getInstance();
     frdsSetManPtr = FriendSetSingleMan::getInstance();
@@ -49,11 +47,9 @@ MainPanel::MainPanel(int uid, QWidget *parent) :
 
     mesgChannelPtr->regOneImobsever(new ImesgKeepAliveObsev, this);
     mesgChannelPtr->regOneImobsever(new ImesgUsrOnlistObsev, this);
-    mesgChannelPtr->regOneImobsever(new ImesgNetGetUdpAddr, this);
-    mesgChannelPtr->regOneImobsever(new ImesgP2pUdp, this);
 
-    clockThreadManPtr->ClockerInit(&udpKeepTimer,5000, clockTaskUdpKeepAlive, this);
-    clockThreadManPtr->addClocker(&udpKeepTimer);
+    clockThreadManPtr->ClockerInit(&udpKeepTimer,clockTaskUdpKeepAlive, this);
+    clockThreadManPtr->addClocker(&udpKeepTimer, 5000);
 
     curFriendNum = 0;
     remUdpIpv4Addr = remUdpPort = 0;
@@ -78,6 +74,12 @@ void MainPanel::startServer()
 {
     imMesgSendWentOnMessage();
     getUsrOnLinelist();
+
+    QHostAddress loc(mesgChannelPtr->getLocalUdpIpv4());
+    QString s(QString("loc addr %1:%2").arg(loc.toString()).arg(QString::number(mesgChannelPtr->getLocalUdpProt())));
+
+    debuglogptr->append(s);
+
 }
 
 void MainPanel::imMesgRecvKeepAlive(const ImmessageData &m)
@@ -93,6 +95,10 @@ void MainPanel::imMesgRecvKeepAlive(const ImmessageData &m)
 
 void MainPanel::imMesgPutUsr2UsrListPanel(int uid, const char *name, int avicon)
 {
+    if (uid == mineUsrId){
+        frdsSetManPtr->instOneFriend2Map(uid, name, avicon);
+        return;
+    }
     usrFriendListWidgetPtr->addOneFriend(uid, name, avicon);
     ++curFriendNum;
 
@@ -104,51 +110,9 @@ void MainPanel::imMesgPutUsr2UsrListPanel(int uid, const char *name, int avicon)
 
 }
 
-void MainPanel::imMesgGetUdpAddr(const ImmessageData &m)
+int MainPanel::openChatBrowserByUid(int uid, bool isHasMessage)
 {
-    ImmesgDecorNetwkUdpAddr udp(&m);
-
-    if (!udp.isAck()){//来自对端的 IMMESG_NETGET_UDPADDR 请求P2P请求本地端口，将要进行回复
-        sendLocalUdpAddr2Usr(udp.getSrcUsrId(), 0);
-    }//然后开发p2p隧道打通
-
-    QHostAddress addr(udp.getSrcUsrRemUdpAddr().ipv4), addr0(udp.getSrcUsrLocUdpAddr().ipv4);
-    QString log("Udp addr ");
-
-    log+= addr0.toString();
-
-    log+=":";
-    log+=QString::number(udp.getSrcUsrLocUdpAddr().port);
-    log+="->";
-    log+=addr.toString();
-    log+=":";
-    log+=QString::number(( udp.getSrcUsrRemUdpAddr().port));
-    debuglogptr->append(log);
-
-    P2PUdpChannel::netAdddr_t rem, loc;
-
-    rem.ipv4 = udp.getSrcUsrRemUdpAddr().ipv4;
-    rem.port = udp.getSrcUsrRemUdpAddr().port;
-    loc.ipv4 = udp.getSrcUsrLocUdpAddr().ipv4;
-    loc.port = udp.getSrcUsrLocUdpAddr().port;
-
-    p2pudpChan.getChannelId(rem, loc, udp.getSrcUsrId(), mineUsrId);
-
-
-}
-
-void MainPanel::imMesgP2pUdp(const ImmessageData &m)
-{
-    p2pudpChan.recvData(m);
-}
-
-int MainPanel::openChatBrowserByUid(int uid)
-{
-    int n = chatBrowserWgtManPtr->openChatBrowserWgtByUid(uid);
-
-    if (n >= 0){
-        sendLocalUdpAddr2Usr(uid);
-    }
+    int n = chatBrowserWgtManPtr->openChatBrowserWgtByUid(uid, mineUsrId, isHasMessage);
     return n;
 }
 
@@ -157,22 +121,16 @@ void MainPanel::closeChatBrowserByUid(int uid)
     chatBrowserWgtManPtr->closeChatBrowserWgtByUid(uid);
 }
 
+void MainPanel::noticeMessagComeing(int uid)
+{
+    usrFriendListWidgetPtr->setMessageNote2Uid(uid);
+}
+
 void MainPanel::imMesgSendWentOnMessage()
 {
     ImmessageData m(IMMESG_USER_BROAD);
 
     m.setDstSrcUsr(0, mineUsrId);
-    mesgChannelPtr->pushUdpDataOut(m);
-}
-
-void MainPanel::sendLocalUdpAddr2Usr(int dstUid, int isInit)
-{
-    ImmessageData m(IMMESG_NETGET_UDPADDR);
-    ImmesgDecorNetwkUdpAddr udp(&m);
-
-    udp.setDstSrcUsr(dstUid, mineUsrId);
-    udp.setSrcUsrLocUdpAddr(mesgChannelPtr->getLocalUdpIpv4(), mesgChannelPtr->getLocalUdpProt());
-    udp.setAck(!isInit);
     mesgChannelPtr->pushUdpDataOut(m);
 }
 

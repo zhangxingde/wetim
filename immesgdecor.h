@@ -115,42 +115,57 @@ private:
     RemUdpAddr_t *udpaddrPtr;
 };
 
-
-
-class ImmesgDecorNetwkUdpAddr : public ImmessageMan
+class ImmesgDecorP2PUdpData : public ImmessageMan
 {
 public:
+    enum {
+        UDP_P2P_NONE,
+        UDP_P2P_REQUEST,
+        UDP_P2P_CONNECT1,
+        UDP_P2P_CONNECT2,
+        UDP_P2P_KEEP,
+        UDP_P2P_CLOSE
+
+    };
     #pragma pack(1)
     typedef struct {
-        unsigned int ipv4;
-        unsigned short port;
-    }UdpAddr_t;
-
-    typedef struct {
-        UdpAddr_t rem;
-        UdpAddr_t loc;
-    }RemLocAddr_t;
+        netAddr_t rem;
+        netAddr_t loc;
+        int srcChid;
+        int dstChid;
+        char state;
+        char ack;
+    }p2pTransData_t;
     #pragma pack()
-    ImmesgDecorNetwkUdpAddr (ImmessageMan *m);
-    ImmesgDecorNetwkUdpAddr (const ImmessageMan *m);
+
+    ImmesgDecorP2PUdpData (ImmessageMan *m);
+    ImmesgDecorP2PUdpData (const ImmessageMan *m);
 
     void setSrcUsrRemUdpAddr (unsigned int ipv4, unsigned short port);
     void setSrcUsrLocUdpAddr (unsigned int ipv4, unsigned short port);
-    UdpAddr_t getSrcUsrRemUdpAddr ()
+    netAddr_t getSrcUsrRemUdpAddr ()
     {
-        UdpAddr_t rem = {ntohl(remLocAddrPtr->rem.ipv4), ntohs(remLocAddrPtr->rem.port)};
+        netAddr_t rem = {ntohl(p2pTransDataPtr->rem.ipv4), ntohs(p2pTransDataPtr->rem.port)};
         return rem;
     }
-    UdpAddr_t getSrcUsrLocUdpAddr ()
+    netAddr_t getSrcUsrLocUdpAddr ()
     {
-        UdpAddr_t loc = {ntohl(remLocAddrPtr->loc.ipv4), ntohs(remLocAddrPtr->loc.port)};
+        netAddr_t loc = {ntohl(p2pTransDataPtr->loc.ipv4), ntohs(p2pTransDataPtr->loc.port)};
         return loc;
     }
+    void setAck (bool a) {p2pTransDataPtr->ack = a;}
+    void setState (char s) {p2pTransDataPtr->state = s;}
+    void setDstChid (int id) {p2pTransDataPtr->dstChid = htonl(id);}
+    void setSrcChid (int id) {p2pTransDataPtr->srcChid = htonl(id);}
 
-    void setAck (bool a);
-    bool isAck () const;
+    bool isAck () const {return p2pTransDataPtr->ack;}
+    char getState () const {return p2pTransDataPtr->state;}
+    const char* getUsrData () {return (const char*)(p2pTransDataPtr + 1);}
+    int getUsrDataLen () {return mesgLength() - sizeof(p2pTransData_t);}
+    int getSrcChid () const {return ntohl(p2pTransDataPtr->srcChid);}
+    int getDstChid () const {return ntohl(p2pTransDataPtr->dstChid);}
 private:
-    RemLocAddr_t *remLocAddrPtr;
+    p2pTransData_t *p2pTransDataPtr;
 
 };
 
@@ -158,104 +173,7 @@ private:
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
-class ImmesgObsev {
-public:
-    ImmesgObsev (Imesgtpe_t t){imtype = t;}
-    virtual ~ImmesgObsev() {}
-    int getMesgType () {return imtype;}
-    virtual void workIngWithRecvMessage (const ImmessageData &im, const char *addr, int port, void *p) = 0;
-private:
-    Imesgtpe_t imtype;
-};
-#if 0
 
-#pragma pack(1)
-typedef struct {
-    char name[24];
-    int usrNu;
-}imMeagLogon_t;
-#pragma pack()
-
-class imMesgLogon_c : public imMessageMan_c
-{
-public:
-    imMesgLogon_c(int usrnu);
-    imMesgLogon_c (imMessageMan_c &src);
-    bool setUsrInfo(const char *name);
-    const char* getName ();
-private:
-
-};
-
-/////////////////////////////
-/////////////////////////////
-#pragma pack(1)
-typedef struct {
-    char name[24];
-    int usrnu;
-    netAddr_t remAddr;
-}imMesgOnline_t;
-#pragma pack()
-
-
-class imMesgOnLineList_c : public imMessageMan_c
-{
-public:
-    imMesgOnLineList_c();
-    imMesgOnLineList_c (const imMessageMan_c &src);
-    bool addOneUsrList (const imMesgOnline_t &l);
-    const imMesgOnline_t* getListLoop ();
-private:
-    int contenLen;
-};
-
-/*
- * p2p 连接过程(a--->b)
- * 1 IMMESG_P2PUDP_ASK a向服务器发送IMMESG_P2PUDP_ASK请求，请求向b（dstUsrNu）进行p2p通信，a要带上自己本地端的UDP IP和端口。
- * 2 IMMESG_P2PUDP_CONNSET a进而向b的外网地址B发送P2P请求连接报文。
- * 3 IMMESG_P2PUDP_ASK 服务器向b转发a的IMMESG_P2PUDP_ASK请求，并告知a的本地UDP IP和端口。
- * 4 IMMESG_P2PUDP_CONNSET b向a的外网地址A发送IMMESG_P2PUDP_CONNSET报文。
- * 5 IMMESG_P2PUDP_CONNSET a和b互相接受对方的IMMESG_P2PUDP_CONNSET报文，并把其中的ack置1，然后把报文返回。
- * 6 IMMESG_P2PUDP_CHAT a与b进行聊天，dataText为聊天内容。
- * 7 IMMESG_P2PUDP_KEEP 使p2p通道保持连接，每隔5秒发送一次，接到该报文后，把ack置1，然后把报文返回.
-*/
-enum {
-    IMMESG_P2PUDP_ASK,
-    IMMESG_P2PUDP_CONNSET1,
-    IMMESG_P2PUDP_CONNSET2,
-    IMMESG_P2PUDP_CHAT,
-    IMMESG_P2PUDP_KEEP,
-};
-
-#pragma pack(1)
-typedef struct {
-    int dstUsrNu;
-    int srcUsrNu;
-    //unsigned int dstaddr;
-    //unsigned short dstport;
-    //unsigned int srcaddr;
-    //unsigned short srcport;
-    int dataType;
-    int ack;
-    int dataLen;
-    char dataText[0];
-}imMesgP2Pdata_t;
-#pragma pack()
-
-class imMesgP2Pdata_c : public imMessageMan_c
-{
-public:
-    imMesgP2Pdata_c(int dstnu, int srcnu, int t);
-    imMesgP2Pdata_c(const imMessageMan_c &src);
-
-    const imMesgP2Pdata_t& getp2pContent () {return *imMesgP2PdataPtr;}
-    void setAck () ;
-    bool pushChatData (const void *data = 0, int len = 0);
-private:
-    imMesgP2Pdata_t *imMesgP2PdataPtr;
-
-};
-#endif
 #endif // IMMESGPARSE_H
 
 

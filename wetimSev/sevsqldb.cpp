@@ -1,5 +1,7 @@
 ﻿#include <stdio.h>
+#include <cstdlib>
 #include "sevsqldb.h"
+#include "usrheadicondb.h"
 
 SevSqlDB::SevSqlDB():sqlite3db("wetimesev.db")
 {
@@ -22,23 +24,42 @@ SevSqlDB::SevSqlDB():sqlite3db("wetimesev.db")
                       FIELD_USRID_CRETIME) > 0){
         sqlite3db.runQuery(sqlcmd);
     }
+
+    usrHeadIconDbPtr->setSQldbPath("usrheadicon.db");
+    usrHeadIconDbPtr = UsrHeadIconDb::getInstance();
 }
 
-SevSqlDB::~SevSqlDB() {}
+SevSqlDB::~SevSqlDB()
+{
+    usrHeadIconDbPtr->close();
+}
 
 int SevSqlDB::getNewUsrID()
 {
     int idnew = ((getTotalUsrCount() + 1)<<8) + (time(0)&0xff);
     SqlQueryDataRows row(TABLE_USRID,SqlQueryDataRows::SQLCMD_INSERT);
 
+    row.addOneField(FIELD_USRID_AVAICON, usrHeadIconDbPtr->getRandHeadIconNum());
     row.addOneField(FIELD_USRID_ID, idnew);
-    row.addOneField(FIELD_USRID_NAME, "newuser");
+    row.addOneField(FIELD_USRID_NAME, getRandUsrName());
     row.addOneField(FIELD_USRID_CRETIME, (long long)time(0));
+    row.finishedRow();
 
     if (getSqlDb()->runQuery(row)){
         return idnew;
     }
     return 0;
+}
+
+const char* SevSqlDB::getRandUsrName()
+{
+    static const char *defName[] = {
+        "张三","李四","王麻子","赵六", "孙七",
+        "笑笑","韦蝠王","王二妞", "魔剑客", "小青",
+        "小明"
+    };
+
+    return defName[rand() % (sizeof(defName)/sizeof(defName[0]))];
 }
 
 int SevSqlDB::getTotalUsrCount()

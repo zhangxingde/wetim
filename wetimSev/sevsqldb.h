@@ -3,6 +3,8 @@
 #include "sql/sqlite3man.h"
 #include "singletontemp.h"
 
+class UsrHeadIconDb;
+
 #define FIELD_USRID_ID      "id"
 #define FIELD_USRID_NAME    "name"
 #define FIELD_USRID_PASSWD  "passwd"
@@ -22,6 +24,8 @@ private:
     SevSqlDB();
     ~SevSqlDB();
     Sqlite3Man sqlite3db;
+    UsrHeadIconDb *usrHeadIconDbPtr;
+    const char* getRandUsrName ();
 
     inline SqlMan* getSqlDb () {return &sqlite3db;}
 };

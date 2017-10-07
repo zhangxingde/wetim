@@ -1,6 +1,8 @@
 ﻿#include "climesgobsev.h"
 #include "logonui.h"
 #include "mainpanel.h"
+#include "p2pudpchannel.h"
+#include "chatbrowserwgtman.h"
 #include <QDebug>
 
 ImesgApplyNumObsev::ImesgApplyNumObsev():ImmesgObsev(IMMESG_APPLYNUM)
@@ -42,18 +44,17 @@ void ImesgUsrOnlistObsev::workIngWithRecvMessage(const ImmessageData &im, const 
 
 }
 
-void ImesgNetGetUdpAddr::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
-{
-    MainPanel *panelPtr = (MainPanel*)p;
-
-    panelPtr->imMesgGetUdpAddr(im);
-}
-
-
 void ImesgP2pUdp::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
 {
-    MainPanel *panelPtr = (MainPanel*)p;
+    P2PUdpChannel *p2p = (P2PUdpChannel*)p;
 
     qDebug()<<"p2p recv from "<<addr<<":"<<port;
-    panelPtr->imMesgP2pUdp(im);
+    p2p->recvData(im);
+}
+
+void ImesgChatMessage::workIngWithRecvMessage(const ImmessageData &im, const char *addr, int port, void *p)
+{
+    ChatBrowserWgtMan *man = (ChatBrowserWgtMan*)p;
+
+    man->recvChatMessage(im);
 }

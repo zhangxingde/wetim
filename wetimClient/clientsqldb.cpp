@@ -1,5 +1,6 @@
 ﻿#include "clientsqldb.h"
 #include "include_h/sys_defs.h"
+#include "usrheadicondb.h"
 #include <QDir>
 #include <QDebug>
 
@@ -32,6 +33,7 @@ ClientSqlDb::ClientSqlDb():logonDb((QDir::homePath()+"/"+SYSCFGROOT+"/wetim.db")
         logonDb.runQuery(sqlcmd);
     }
 
+    UsrHeadIconDb::setSQldbPath((QDir::homePath()+"/"+SYSCFGROOT+"/usrheadicon.db").toStdString().c_str());
 }
 ClientSqlDb::~ClientSqlDb(){}
 
@@ -127,9 +129,36 @@ bool ClientSqlDb::queryUsrPasswdByUsrID(int uid, char *pass, size_t len)
     return 0;
 }
 
+int ClientSqlDb::queryUsrHeadIconId(int uid)
+{
+    SqlQueryDataRows row;
+    char where[128];
+
+    snprintf(where, sizeof(where), FIELD_USRBASE_ID" = %d", uid);
+
+    if (queryUsrBaseInfo(row, where) && row.size() > 0){
+        return row[0][3].getInt();
+    }
+    return -1;
+}
+
+bool ClientSqlDb::queryUsrName(int uid, char *dstptr, int dstlen)
+{
+    SqlQueryDataRows row;
+    char where[128];
+
+    snprintf(where, sizeof(where), FIELD_USRBASE_ID" = %d", uid);
+
+    if (queryUsrBaseInfo(row, where) && row.size() > 0){
+        strncpy(dstptr, row[0][1].getString(), dstlen);
+        return 1;
+    }
+    return 0;
+}
+
 bool ClientSqlDb::queryUsrBaseInfo(SqlQueryDataRows &row, const std::string &where)
 {
-    std::string cmd = "select "+ std::string(FIELD_USRBASE_ID) + std::string(" from ") + std::string(TABLE_NAME_BASEINFO);
+    std::string cmd = "select *"+ std::string(" from ") + std::string(TABLE_NAME_BASEINFO);
 
     if (!where.empty()){
         cmd += std::string(" where ") + where;
